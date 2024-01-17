@@ -22,8 +22,45 @@ class Follow(models.Model):
         return f"{self.user} подписан на {self.following}"
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=128)
+    color = models.IntegerField()  # уточнить
+    slug = models.SlugField(max_length=50, unique=True)
+    created_at = models.DateTimeField(
+        'Дата добавления', auto_now_add=True, db_index=True
+    )
+
+    def __str__(self):
+        return self.name
+
+
+class Measurement(models.Model):
+    type = models.CharField(max_length=128)
+    created_at = models.DateTimeField(
+        'Дата добавления', auto_now_add=True, db_index=True
+    )
+
+    def __str__(self):
+        return self.type
+
+
+class Ingredient(models.Model):
+    name = models.CharField(max_length=256)
+    measurement_unit = models.ForeignKey(
+        Measurement, on_delete=models.CASCADE
+    )
+    created_at = models.DateTimeField(
+        'Дата добавления', auto_now_add=True, db_index=True
+    )
+
+    def __str__(self):
+        return self.name
+
+
 class Recipe(models.Model):
     name = models.CharField(max_length=256)
+    tag = models.ManyToManyField(Tag, through='TagRecipe')
+    ingredient = models.ManyToManyField(Ingredient, through='IngredientRecipe')
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='recipes'
     )
@@ -36,30 +73,42 @@ class Recipe(models.Model):
         'Дата добавления', auto_now_add=True, db_index=True
     )
 
-
-class Tag(models.Model):
-    pass
-
-
-class RecipeTag(models.Model):
-    pass
+    def __str__(self):
+        return self.name
 
 
-class Ingredient(models.Model):
-    pass
+class TagRecipe(models.Model):
+    tag_id = models.ForeignKey(
+        Tag, on_delete=models.SET_NULL, null=True
+    )
+    recipe_id = models.ForeignKey(Recipe, on_delete=models.CASCADE)
 
 
-class RecipeIngredient(models.Model):
-    pass
-
-
-class Measurement(models.Model):
-    pass
+class IngredientRecipe(models.Model):
+    ingredient_id = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    recipe_id = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    amount = models.IntegerField()
 
 
 class Favourite(models.Model):
-    pass
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.recipe} в избранном {self.user}"
 
 
 class Shoplist(models.Model):
-    pass
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.recipe} в списке покупок {self.user}"
