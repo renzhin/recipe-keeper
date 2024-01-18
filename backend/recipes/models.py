@@ -4,6 +4,15 @@ from django.db import models
 User = get_user_model()
 
 
+class BaseModel(models.Model):
+    created_at = models.DateTimeField(
+        'Дата добавления', auto_now_add=True, db_index=True
+    )
+
+    class Meta:
+        abstract = True
+        
+
 class Follow(models.Model):
     follower = models.ForeignKey(
         User, on_delete=models.CASCADE,
@@ -25,7 +34,7 @@ class Follow(models.Model):
         unique_together = ('follower', 'following')
 
 
-class Tag(models.Model):
+class Tag(BaseModel):
     name = models.CharField(max_length=128)
     color = models.IntegerField()  # уточнить
     slug = models.SlugField(max_length=50, unique=True)
@@ -37,30 +46,24 @@ class Tag(models.Model):
         return self.name
 
 
-class Measurement(models.Model):
+class Measurement(BaseModel):
     type = models.CharField(max_length=128)
-    created_at = models.DateTimeField(
-        'Дата добавления', auto_now_add=True, db_index=True
-    )
 
     def __str__(self):
         return self.type
 
 
-class Ingredient(models.Model):
+class Ingredient(BaseModel):
     name = models.CharField(max_length=256)
     measurement_unit = models.ForeignKey(
         Measurement, on_delete=models.CASCADE
-    )
-    created_at = models.DateTimeField(
-        'Дата добавления', auto_now_add=True, db_index=True
     )
 
     def __str__(self):
         return self.name
 
 
-class Recipe(models.Model):
+class Recipe(BaseModel):
     name = models.CharField(max_length=256)
     tag = models.ManyToManyField(Tag, through='TagRecipe')
     ingredient = models.ManyToManyField(Ingredient, through='IngredientRecipe')
@@ -72,9 +75,6 @@ class Recipe(models.Model):
         upload_to='recipes/', null=True, blank=True
     )  # разобраться
     cooking_time = models.CharField(max_length=50)  # разобраться с типом поля
-    created_at = models.DateTimeField(
-        'Дата добавления', auto_now_add=True, db_index=True
-    )
 
     def __str__(self):
         return self.name
