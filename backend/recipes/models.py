@@ -19,7 +19,10 @@ class Follow(models.Model):
     )
 
     def __str__(self):
-        return f"{self.user} подписан на {self.following}"
+        return f"{self.follower} подписан на {self.following}"
+
+    class Meta:
+        unique_together = ('follower', 'following')
 
 
 class Tag(models.Model):
@@ -68,7 +71,7 @@ class Recipe(models.Model):
     image = models.ImageField(
         upload_to='recipes/', null=True, blank=True
     )  # разобраться
-    cooking_time = models.CharField(max_length=256)  # разобраться с типом поля
+    cooking_time = models.CharField(max_length=50)  # разобраться с типом поля
     created_at = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True
     )
@@ -76,12 +79,17 @@ class Recipe(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ['-created_at']
+
 
 class TagRecipe(models.Model):
-    tag_id = models.ForeignKey(
-        Tag, on_delete=models.SET_NULL, null=True
+    tag = models.ForeignKey(
+        Tag, on_delete=models.SET_NULL, null=True, related_name='tag_recipes'
     )
-    recipe_id = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE, related_name='tag_recipes'
+    )
 
 
 class IngredientRecipe(models.Model):
@@ -101,6 +109,9 @@ class Favourite(models.Model):
     def __str__(self):
         return f"{self.recipe} в избранном {self.user}"
 
+    class Meta:
+        unique_together = ('user', 'recipe')
+
 
 class Shoplist(models.Model):
     user = models.ForeignKey(
@@ -112,3 +123,6 @@ class Shoplist(models.Model):
 
     def __str__(self):
         return f"{self.recipe} в списке покупок {self.user}"
+
+    class Meta:
+        unique_together = ('user', 'recipe')
