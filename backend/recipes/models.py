@@ -11,7 +11,7 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
-        
+
 
 class Follow(models.Model):
     follower = models.ForeignKey(
