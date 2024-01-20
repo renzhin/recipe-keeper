@@ -31,7 +31,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = '__all__'
+        fields = ['id', 'name', 'measurement_unit']
 
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
@@ -57,7 +57,7 @@ class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = '__all__'
+        fields = ['id', 'name', 'color', 'slug']
 
 
 class FavouriteSerializer(serializers.ModelSerializer):
@@ -75,9 +75,9 @@ class ShoplistSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    tag = TagSerializer(many=True)
+    tags = TagSerializer(many=True, source='tag')
     author = UserSerializer()
-    ingredient = IngredientRecipeSerializer(
+    ingredients = IngredientRecipeSerializer(
         many=True,
         source='ingredientrecipe_set'
     )
@@ -86,7 +86,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = [
-            'id', 'tag', 'author', 'ingredient', 'is_favorited',
+            'id', 'tags', 'author', 'ingredients', 'is_favorited',
             'name', 'image', 'text', 'cooking_time'
         ]
         # fields = '__all__'
