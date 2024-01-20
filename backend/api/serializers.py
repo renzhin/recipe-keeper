@@ -1,61 +1,100 @@
 from rest_framework import serializers
 
 from recipes.models import (
-    Follow, Tag, Measurement, Ingredient, Recipe, Favourite, Shoplist, User
+    Follow,
+    Tag,
+    Measurement,
+    Recipe,
+    Ingredient,
+    IngredientRecipe,
+    Favourite,
+    Shoplist,
+    User,
 )
 
 
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
-        models = User
+        model = User
         fields = '__all__'
 
 
 class FollowSerializer(serializers.ModelSerializer):
 
     class Meta:
-        models = Follow
-        fields = '__all__'
-
-
-class RecipeSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        models = Recipe
+        model = Follow
         fields = '__all__'
 
 
 class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
-        models = Ingredient
+        model = Ingredient
         fields = '__all__'
+
+
+class IngredientRecipeSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='ingredient_id.id')
+    name = serializers.CharField(source='ingredient_id.name')
+    measurement_unit = serializers.CharField(
+        source='ingredient_id.measurement_unit'
+    )
+
+    class Meta:
+        model = IngredientRecipe
+        fields = ['id', 'name', 'measurement_unit', 'amount']
 
 
 class MeasurementSerializer(serializers.ModelSerializer):
 
     class Meta:
-        models = Measurement
+        model = Measurement
         fields = '__all__'
 
 
 class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
-        models = Tag
+        model = Tag
         fields = '__all__'
 
 
 class FavouriteSerializer(serializers.ModelSerializer):
 
     class Meta:
-        models = Favourite
+        model = Favourite
         fields = '__all__'
 
 
 class ShoplistSerializer(serializers.ModelSerializer):
 
     class Meta:
-        models = Shoplist
+        model = Shoplist
         fields = '__all__'
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+    tag = TagSerializer(many=True)
+    author = UserSerializer()
+    ingredient = IngredientRecipeSerializer(
+        many=True,
+        source='ingredientrecipe_set'
+    )
+    is_favorited = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        fields = [
+            'id', 'tag', 'author', 'ingredient', 'is_favorited',
+            'name', 'image', 'text', 'cooking_time'
+        ]
+        # fields = '__all__'
+
+    def get_is_favorited(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Favourite.objects.filter(
+                user=request.user, recipe=obj
+            ).exists()
+        return False
