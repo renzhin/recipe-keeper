@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.auth.hashers import make_password
 
 from recipes.models import (
     Follow,
@@ -13,11 +14,35 @@ from recipes.models import (
 )
 
 
-class UserSerializer(serializers.ModelSerializer):
+class CustomTokenObtainPairSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)
+    email = serializers.EmailField()
 
+    def validate(self, attrs):
+        password = attrs.get("password")
+        email = attrs.get("email")
+        user = User.objects.filter(email=email).first()
+
+        if user and user.check_password(password):
+            attrs["user"] = user
+            return attrs
+
+        raise serializers.ValidationError(
+            "Не удается войти в систему с предоставленными учетными данными"
+        )
+
+
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email', 'id', 'username', 'first_name', 'last_name']
+        fields = [
+            'email', 'id', 'username', 'first_name', 'last_name', 'password'
+        ]
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data['password'])
+        return super(UserSerializer, self).create(validated_data)
 
 
 class FollowSerializer(serializers.ModelSerializer):

@@ -1,7 +1,11 @@
 from rest_framework import viewsets
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import (
+    CustomTokenObtainPairSerializer,
     UserSerializer,
     FollowSerializer,
     RecipeSerializer,
@@ -14,6 +18,20 @@ from .serializers import (
 from recipes.models import (
     Follow, Tag, Measurement, Ingredient, Recipe, Favourite, Shoplist, User
 )
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        refresh = RefreshToken.for_user(user)
+        access_token = refresh.access_token
+        return Response({
+            'auth_token': str(access_token),
+        })
 
 
 class UserViewSet(viewsets.ModelViewSet):
