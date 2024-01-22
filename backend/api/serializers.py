@@ -67,6 +67,19 @@ class UserSerializer(serializers.ModelSerializer):
         # extra_kwargs = {'password': {'write_only': True}} Полезный приём
 
     def create(self, validated_data):
+        # Проверка уникальности email и username перед созданием пользователя
+        email = validated_data.get('email')
+        username = validated_data.get('username')
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError(
+                {'email': '"Этот email занят".'}
+            )
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError(
+                {'username': '"Этот username занят".'}
+            )
+
+        # Хеширование пароля и создание пользователя
         validated_data['password'] = make_password(validated_data['password'])
         return super(UserSerializer, self).create(validated_data)
 
