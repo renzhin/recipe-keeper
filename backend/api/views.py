@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from rest_framework import viewsets
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -16,8 +17,10 @@ from .serializers import (
     ShoplistSerializer,
 )
 from recipes.models import (
-    Follow, Tag, Measurement, Ingredient, Recipe, Favourite, Shoplist, User
+    Follow, Tag, Measurement, Ingredient, Recipe, Favourite, Shoplist
 )
+
+User = get_user_model()
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):

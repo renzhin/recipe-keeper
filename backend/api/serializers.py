@@ -1,5 +1,6 @@
-from rest_framework import serializers
+from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
+from rest_framework import serializers
 
 from recipes.models import (
     Follow,
@@ -10,8 +11,10 @@ from recipes.models import (
     IngredientRecipe,
     Favourite,
     Shoplist,
-    User,
 )
+from recipes.validators import validate_me, username_validator
+
+User = get_user_model()
 
 
 class CustomTokenObtainPairSerializer(serializers.Serializer):
@@ -33,12 +36,35 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(
+        max_length=254,
+        required=True,
+    )
+    username = serializers.CharField(
+        max_length=150,
+        required=True,
+        validators=[validate_me, username_validator]
+    )
+    first_name = serializers.CharField(
+        max_length=150,
+        required=True,
+    )
+    last_name = serializers.CharField(
+        max_length=150,
+        required=True,
+    )
+    password = serializers.CharField(
+        max_length=150,
+        required=True,
+        write_only=True,
+    )
+
     class Meta:
         model = User
         fields = [
             'email', 'id', 'username', 'first_name', 'last_name', 'password'
         ]
-        extra_kwargs = {'password': {'write_only': True}}
+        # extra_kwargs = {'password': {'write_only': True}} Полезный приём
 
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data['password'])
