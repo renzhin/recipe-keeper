@@ -1,9 +1,14 @@
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets
+from rest_framework import generics
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .serializers import (
     CustomTokenObtainPairSerializer,
@@ -15,6 +20,7 @@ from .serializers import (
     TagSerializer,
     FavouriteSerializer,
     ShoplistSerializer,
+    CurrentUserSerializer,
 )
 from recipes.models import (
     Follow, Tag, Measurement, Ingredient, Recipe, Favourite, Shoplist
@@ -37,9 +43,39 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         })
 
 
+class LogoutView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = [JWTAuthentication]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh_token')
+            if not refresh_token:
+                return Response(
+                    {'detail': 'Учетные данные не были предоставлены.'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
+            RefreshToken(refresh_token).blacklist()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response(
+                {'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.all()
+
+
+class CurrentUserView(generics.RetrieveAPIView):
+    serializer_class = CurrentUserSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def get_object(self):
+        return self.request.user
 
 
 class FollowViewSet(viewsets.ModelViewSet):

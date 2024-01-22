@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CustomTokenObtainPairView
+from .views import CustomTokenObtainPairView, LogoutView, CurrentUserView
 from .views import UserViewSet, RecipeViewSet, FollowViewSet, IngredientViewSet
 
 
@@ -20,6 +20,16 @@ urlpatterns = [
         'auth/token/login/',
         CustomTokenObtainPairView.as_view(),
         name='token_obtain_pair'
+    ),
+    path(
+        'auth/token/logout/',
+        LogoutView.as_view(),
+        name='token_logout'
+    ),
+    path(
+        'users/me/',
+        CurrentUserView.as_view(),
+        name='current_user'
     ),
 ]
 

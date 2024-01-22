@@ -84,6 +84,19 @@ class UserSerializer(serializers.ModelSerializer):
         return super(UserSerializer, self).create(validated_data)
 
 
+class CurrentUserSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed'
+        ]
+
+    def get_is_subscribed(self, obj):
+        return False
+
+
 class FollowSerializer(serializers.ModelSerializer):
 
     class Meta:
