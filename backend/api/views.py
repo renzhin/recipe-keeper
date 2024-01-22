@@ -45,23 +45,20 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
-    authentication_classes = [JWTAuthentication]
 
     def post(self, request):
         try:
-            refresh_token = request.data.get('refresh_token')
-            if not refresh_token:
-                return Response(
-                    {'detail': 'Учетные данные не были предоставлены.'},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
+            # Используем метод split() для разделения строки на две части по пробелу
+            authorization_header = request.headers.get('Authorization', '')
+            _, token = authorization_header.split() if ' ' in authorization_header else ('', '')
 
-            RefreshToken(refresh_token).blacklist()
+            if not token:
+                raise Exception('Authorization header with Bearer token is required')
+
+            RefreshToken(token).blacklist()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            return Response(
-                {'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED
-            )
+            return Response({'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class UserViewSet(viewsets.ModelViewSet):

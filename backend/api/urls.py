@@ -15,7 +15,6 @@ v1_router.register(r'follows', FollowViewSet)
 v1_router.register(r'ingredients', IngredientViewSet)
 
 urlpatterns = [
-    path('', include(v1_router.urls)),
     path(
         'auth/token/login/',
         CustomTokenObtainPairView.as_view(),
@@ -31,6 +30,7 @@ urlpatterns = [
         CurrentUserView.as_view(),
         name='current_user'
     ),
+    path('', include(v1_router.urls)),
 ]
 
 
