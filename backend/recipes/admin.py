@@ -1,4 +1,6 @@
 from django.contrib import admin
+
+from users.models import ModifiedUser
 from .models import (
     Follow,
     Recipe,
@@ -33,3 +35,4 @@ admin.site.register(Measurement)
 admin.site.register(Tag)
 admin.site.register(Favourite)
 admin.site.register(Shoplist)
+admin.site.register(ModifiedUser)
