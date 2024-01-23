@@ -1,5 +1,6 @@
 Django==3.2.16
 Pillow==9.3.0
+webcolors==1.11.1
 djangorestframework==3.14.0
 # djangorestframework==3.12.4
 djoser==2.1.0 

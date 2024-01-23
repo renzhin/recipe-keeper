@@ -1,3 +1,7 @@
+import base64
+
+import webcolors
+from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
@@ -15,6 +19,31 @@ from recipes.models import (
 from recipes.validators import validate_me, username_validator
 
 User = get_user_model()
+
+
+class Hex2NameColor(serializers.Field):
+    def to_representation(self, value):
+        return value
+
+    def to_internal_value(self, data):
+        try:
+            data = webcolors.hex_to_name(data)
+        except ValueError:
+            raise serializers.ValidationError('Для этого цвета нет имени')
+        return data
+
+
+class Base64ImageField(serializers.ImageField):
+    def to_internal_value(self, data):
+        # Если полученный объект строка, и эта строка 
+        # начинается с 'data:image'...
+        if isinstance(data, str) and data.startswith('data:image'):
+            # ...начинаем декодировать изображение из base64.
+            # Сначала нужно разделить строку на части.
+            format, imgstr = data.split(';base64,')  
+            # И извлечь расширение файла.
+            ext = format.split('/')[-1]
+            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
 
 
 class CustomTokenObtainPairSerializer(serializers.Serializer):
@@ -131,6 +160,7 @@ class MeasurementSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    color = Hex2NameColor()
 
     class Meta:
         model = Tag
@@ -160,6 +190,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     )
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
+    image = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Recipe

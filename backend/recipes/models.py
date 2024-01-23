@@ -43,7 +43,8 @@ class Tag(BaseModel):
         max_length=128,
         verbose_name='название',
     )
-    color = models.IntegerField(
+    color = models.CharField(
+        max_length=16,
         verbose_name='цвет',
     )  # уточнить
     slug = models.SlugField(max_length=50, unique=True)
