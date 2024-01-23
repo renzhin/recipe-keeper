@@ -6,11 +6,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken, OutstandingToken
+from rest_framework_simplejwt.tokens import BlacklistMixin, RefreshToken, OutstandingToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import BlacklistMixin
 
 from .serializers import (
     CustomTokenObtainPairSerializer,
@@ -45,7 +44,39 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         })
 
 
-class LogoutView(APIView):
+# class LogoutView(APIView):
+#     permission_classes = (IsAuthenticated,)
+
+#     def post(self, request):
+#         try:
+#             access_token = self.extract_access_token(request)
+#             if not access_token:
+#                 raise TokenError('Access token is required in the request header')
+
+#             # Черный список access токена
+#             token = OutstandingToken.objects.filter(token=access_token).first()
+#             if token:
+#                 token.blacklist()
+
+#             return Response(status=status.HTTP_204_NO_CONTENT)
+#         except TokenError as e:
+#             return Response({'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+
+#     def extract_access_token(self, request):
+#         auth_header = request.headers.get('Authorization', '')
+
+#         # Проверяем наличие префикса "Bearer "
+#         if auth_header.startswith('Bearer '):
+#             return auth_header.split('Bearer ')[1].strip()
+
+#         # Проверяем наличие префикса "Token "
+#         elif auth_header.startswith('Token '):
+#             return auth_header.split('Token ')[1].strip()
+
+#         return None
+
+
+class LogoutView(BlacklistMixin, APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
@@ -53,11 +84,9 @@ class LogoutView(APIView):
             access_token = self.extract_access_token(request)
             if not access_token:
                 raise TokenError('Access token is required in the request header')
-
-            # Черный список access токена
-            token = OutstandingToken.objects.filter(token=access_token).first()
-            if token:
-                token.blacklist()
+            print(f'извлек токен {access_token}')
+            # Вместо вызова blacklist, используйте BlacklistMixin
+            self.blacklist(access_token)
 
             return Response(status=status.HTTP_204_NO_CONTENT)
         except TokenError as e:
