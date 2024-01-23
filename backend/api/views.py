@@ -6,7 +6,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework_simplejwt.tokens import BlacklistMixin, RefreshToken, OutstandingToken
+from rest_framework_simplejwt.tokens import BlacklistMixin, RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -90,7 +90,9 @@ class LogoutView(BlacklistMixin, APIView):
 
             return Response(status=status.HTTP_204_NO_CONTENT)
         except TokenError as e:
-            return Response({'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED
+                )
 
     def extract_access_token(self, request):
         auth_header = request.headers.get('Authorization', '')

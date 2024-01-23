@@ -46,7 +46,7 @@ class Tag(BaseModel):
     color = models.CharField(
         max_length=16,
         verbose_name='цвет',
-    )  # уточнить
+    )
     slug = models.SlugField(max_length=50, unique=True)
     created_at = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True

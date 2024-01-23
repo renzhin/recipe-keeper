@@ -119,7 +119,12 @@ class CurrentUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed'
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed'
         ]
 
     def get_is_subscribed(self, obj):
