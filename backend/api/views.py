@@ -6,9 +6,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, OutstandingToken
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import BlacklistMixin
 
 from .serializers import (
     CustomTokenObtainPairSerializer,
@@ -48,17 +50,79 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
-            # Используем метод split() для разделения строки на две части по пробелу
-            authorization_header = request.headers.get('Authorization', '')
-            _, token = authorization_header.split() if ' ' in authorization_header else ('', '')
+            access_token = self.extract_access_token(request)
+            if not access_token:
+                raise TokenError('Access token is required in the request header')
 
-            if not token:
-                raise Exception('Authorization header with Bearer token is required')
+            # Черный список access токена
+            token = OutstandingToken.objects.filter(token=access_token).first()
+            if token:
+                token.blacklist()
 
-            RefreshToken(token).blacklist()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
+        except TokenError as e:
             return Response({'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+
+    def extract_access_token(self, request):
+        auth_header = request.headers.get('Authorization', '')
+
+        # Проверяем наличие префикса "Bearer "
+        if auth_header.startswith('Bearer '):
+            return auth_header.split('Bearer ')[1].strip()
+
+        # Проверяем наличие префикса "Token "
+        elif auth_header.startswith('Token '):
+            return auth_header.split('Token ')[1].strip()
+
+        return None
+
+
+# class LogoutView(BlacklistMixin, APIView):
+#     permission_classes = (IsAuthenticated,)
+
+#     def post(self, request):
+#         try:
+#             access_token = self.extract_access_token(request)
+#             if not access_token:
+#                 raise TokenError('Access token is required in the request header')
+
+#             # Вместо вызова blacklist, используйте BlacklistMixin
+#             self.add_to_blacklist(access_token)
+            
+#             return Response(status=status.HTTP_204_NO_CONTENT)
+#         except TokenError as e:
+#             return Response({'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+
+#     def extract_access_token(self, request):
+#         auth_header = request.headers.get('Authorization', '')
+
+#         # Проверяем наличие префикса "Bearer "
+#         if auth_header.startswith('Bearer '):
+#             return auth_header.split('Bearer ')[1].strip()
+
+#         # Проверяем наличие префикса "Token "
+#         elif auth_header.startswith('Token '):
+#             return auth_header.split('Token ')[1].strip()
+
+#         return None
+
+
+# class LogoutView(APIView):
+#     permission_classes = (IsAuthenticated,)
+
+#     def post(self, request):
+#         try:
+#             # Используем метод split() для разделения строки на две части по пробелу
+#             authorization_header = request.headers.get('Authorization', '')
+#             _, token = authorization_header.split() if ' ' in authorization_header else ('', '')
+
+#             if not token:
+#                 raise Exception('Authorization header with Bearer token is required')
+
+#             RefreshToken(token).blacklist()
+#             return Response(status=status.HTTP_204_NO_CONTENT)
+#         except Exception as e:
+#             return Response({'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class UserViewSet(viewsets.ModelViewSet):
