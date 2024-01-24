@@ -1,13 +1,13 @@
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets, generics
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
-from djoser.views import TokenCreateView
-from djoser.views import TokenDestroyView
+from djoser.views import TokenCreateView, TokenDestroyView
 from djoser.views import UserViewSet as DjoserUserViewSet
 
-
+from api.pagination import CustomPagination
 from .serializers import (
     UserSerializer,
     FollowSerializer,
@@ -41,6 +41,7 @@ class PasswordReset(DjoserUserViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.all()
+    pagination_class = CustomPagination
 
 
 class CurrentUserView(generics.RetrieveAPIView):
@@ -59,7 +60,7 @@ class FollowViewSet(viewsets.ModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     queryset = Recipe.objects.all()
-    pagination_class = LimitOffsetPagination
+    pagination_class = CustomPagination
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
@@ -72,7 +73,7 @@ class MeasurementViewSet(viewsets.ModelViewSet):
     queryset = Measurement.objects.all()
 
 
-class TagViewSet(viewsets.ModelViewSet):
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
 
