@@ -1,8 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CustomTokenObtainPairView, LogoutView, CurrentUserView
+from .views import (
+    CustomTokenObtainPairView,
+    CustomLogoutView,
+    PasswordReset,
+    CurrentUserView
+)
 from .views import UserViewSet, RecipeViewSet, FollowViewSet, IngredientViewSet
-
 
 app_name = 'api'
 
@@ -19,11 +23,14 @@ urlpatterns = [
         'auth/token/login/',
         CustomTokenObtainPairView.as_view(),
         name='token_obtain_pair'
-    ),
+        ),
+    path('auth/token/logout/',
+         CustomLogoutView.as_view(),
+         name='logout'),
     path(
-        'auth/token/logout/',
-        LogoutView.as_view(),
-        name='token_logout'
+        'users/set_password/',
+        PasswordReset.as_view({'post': 'set_password'}),
+        name='set_password'
     ),
     path(
         'users/me/',
@@ -32,9 +39,3 @@ urlpatterns = [
     ),
     path('', include(v1_router.urls)),
 ]
-
-
-# urlpatterns = [
-#     path('v1/auth/signup/', SignUpView.as_view()),
-#     path('auth/token/login/', TokenView.as_view()),
-# ]

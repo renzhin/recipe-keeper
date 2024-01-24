@@ -1,18 +1,14 @@
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets
-from rest_framework import generics
+from rest_framework import viewsets, generics
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework_simplejwt.tokens import BlacklistMixin, RefreshToken
-from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAuthenticated, AllowAny
+
+from djoser.views import TokenCreateView
+from djoser.views import TokenDestroyView
+from djoser.views import UserViewSet as DjoserUserViewSet
+
 
 from .serializers import (
-    CustomTokenObtainPairSerializer,
     UserSerializer,
     FollowSerializer,
     RecipeSerializer,
@@ -30,130 +26,16 @@ from recipes.models import (
 User = get_user_model()
 
 
-class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        refresh = RefreshToken.for_user(user)
-        access_token = refresh.access_token
-        return Response({
-            'auth_token': str(access_token),
-        })
+class CustomTokenObtainPairView(TokenCreateView):
+    permission_classes = [AllowAny]
 
 
-# class LogoutView(APIView):
-#     permission_classes = (IsAuthenticated,)
-
-#     def post(self, request):
-#         try:
-#             access_token = self.extract_access_token(request)
-#             if not access_token:
-#                 raise TokenError('Access token is required in the request header')
-
-#             # Черный список access токена
-#             token = OutstandingToken.objects.filter(token=access_token).first()
-#             if token:
-#                 token.blacklist()
-
-#             return Response(status=status.HTTP_204_NO_CONTENT)
-#         except TokenError as e:
-#             return Response({'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
-
-#     def extract_access_token(self, request):
-#         auth_header = request.headers.get('Authorization', '')
-
-#         # Проверяем наличие префикса "Bearer "
-#         if auth_header.startswith('Bearer '):
-#             return auth_header.split('Bearer ')[1].strip()
-
-#         # Проверяем наличие префикса "Token "
-#         elif auth_header.startswith('Token '):
-#             return auth_header.split('Token ')[1].strip()
-
-#         return None
+class CustomLogoutView(TokenDestroyView):
+    permission_classes = [IsAuthenticated]
 
 
-class LogoutView(BlacklistMixin, APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
-        try:
-            access_token = self.extract_access_token(request)
-            if not access_token:
-                raise TokenError('Access token is required in the request header')
-            print(f'извлек токен {access_token}')
-            # Вместо вызова blacklist, используйте BlacklistMixin
-            self.blacklist(access_token)
-
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except TokenError as e:
-            return Response(
-                {'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED
-                )
-
-    def extract_access_token(self, request):
-        auth_header = request.headers.get('Authorization', '')
-
-        # Проверяем наличие префикса "Bearer "
-        if auth_header.startswith('Bearer '):
-            return auth_header.split('Bearer ')[1].strip()
-
-        # Проверяем наличие префикса "Token "
-        elif auth_header.startswith('Token '):
-            return auth_header.split('Token ')[1].strip()
-
-        return None
-
-
-# class LogoutView(BlacklistMixin, APIView):
-#     permission_classes = (IsAuthenticated,)
-
-#     def post(self, request):
-#         try:
-#             access_token = self.extract_access_token(request)
-#             if not access_token:
-#                 raise TokenError('Access token is required in the request header')
-
-#             # Вместо вызова blacklist, используйте BlacklistMixin
-#             self.add_to_blacklist(access_token)
-            
-#             return Response(status=status.HTTP_204_NO_CONTENT)
-#         except TokenError as e:
-#             return Response({'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
-
-#     def extract_access_token(self, request):
-#         auth_header = request.headers.get('Authorization', '')
-
-#         # Проверяем наличие префикса "Bearer "
-#         if auth_header.startswith('Bearer '):
-#             return auth_header.split('Bearer ')[1].strip()
-
-#         # Проверяем наличие префикса "Token "
-#         elif auth_header.startswith('Token '):
-#             return auth_header.split('Token ')[1].strip()
-
-#         return None
-
-
-# class LogoutView(APIView):
-#     permission_classes = (IsAuthenticated,)
-
-#     def post(self, request):
-#         try:
-#             # Используем метод split() для разделения строки на две части по пробелу
-#             authorization_header = request.headers.get('Authorization', '')
-#             _, token = authorization_header.split() if ' ' in authorization_header else ('', '')
-
-#             if not token:
-#                 raise Exception('Authorization header with Bearer token is required')
-
-#             RefreshToken(token).blacklist()
-#             return Response(status=status.HTTP_204_NO_CONTENT)
-#         except Exception as e:
-#             return Response({'detail': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+class PasswordReset(DjoserUserViewSet):
+    permission_classes = [IsAuthenticated]
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -164,7 +46,6 @@ class UserViewSet(viewsets.ModelViewSet):
 class CurrentUserView(generics.RetrieveAPIView):
     serializer_class = CurrentUserSerializer
     permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
 
     def get_object(self):
         return self.request.user

@@ -35,33 +35,15 @@ class Hex2NameColor(serializers.Field):
 
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
-        # Если полученный объект строка, и эта строка 
+        # Если полученный объект строка, и эта строка
         # начинается с 'data:image'...
         if isinstance(data, str) and data.startswith('data:image'):
             # ...начинаем декодировать изображение из base64.
             # Сначала нужно разделить строку на части.
-            format, imgstr = data.split(';base64,')  
+            format, imgstr = data.split(';base64,')
             # И извлечь расширение файла.
             ext = format.split('/')[-1]
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-
-
-class CustomTokenObtainPairSerializer(serializers.Serializer):
-    password = serializers.CharField(write_only=True)
-    email = serializers.EmailField()
-
-    def validate(self, attrs):
-        password = attrs.get("password")
-        email = attrs.get("email")
-        user = User.objects.filter(email=email).first()
-
-        if user and user.check_password(password):
-            attrs["user"] = user
-            return attrs
-
-        raise serializers.ValidationError(
-            "Не удается войти в систему с предоставленными учетными данными"
-        )
 
 
 class UserSerializer(serializers.ModelSerializer):
