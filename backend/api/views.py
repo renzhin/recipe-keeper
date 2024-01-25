@@ -1,8 +1,7 @@
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, generics
+from rest_framework import viewsets, generics, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.decorators import action
-from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 
 from djoser.views import TokenCreateView, TokenDestroyView
 from djoser.views import UserViewSet as DjoserUserViewSet
@@ -66,6 +65,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
 class IngredientViewSet(viewsets.ModelViewSet):
     serializer_class = IngredientSerializer
     queryset = Ingredient.objects.all()
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    # pagination_class = None  # отключение пагинации на уровне вьюсета
+    filterset_fields = ('name',)
+    search_fields = ('name',)
 
 
 class MeasurementViewSet(viewsets.ModelViewSet):
