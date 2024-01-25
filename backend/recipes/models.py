@@ -105,8 +105,7 @@ class Recipe(BaseModel):
     image = models.ImageField(
         upload_to='recipes/', null=True, blank=True
     )  # разобраться
-    cooking_time = models.CharField(
-        max_length=50,
+    cooking_time = models.IntegerField(
         verbose_name='время приготовления',
     )  # разобраться с типом поля
 

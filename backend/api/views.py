@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import viewsets, generics, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
-
+from django.db.models import OuterRef, Exists
 from djoser.views import TokenCreateView, TokenDestroyView
 from djoser.views import UserViewSet as DjoserUserViewSet
 
@@ -11,6 +11,8 @@ from .serializers import (
     UserSerializer,
     FollowSerializer,
     RecipeSerializer,
+    CreateRecipeSerializer,
+    # RecipePublicSerializer,
     IngredientSerializer,
     MeasurementSerializer,
     TagSerializer,
@@ -57,9 +59,42 @@ class FollowViewSet(viewsets.ModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    serializer_class = RecipeSerializer
     queryset = Recipe.objects.all()
     pagination_class = CustomPagination
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return CreateRecipeSerializer
+        return RecipeSerializer
+
+    # def get_serializer_class(self):
+    #     if self.action == 'create':
+    #         return CreateRecipeSerializer
+    #     elif self.request.user.is_authenticated:
+    #         return RecipeSerializer
+    #     else:
+    #         return RecipePublicSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.is_authenticated:
+            return Recipe.objects.annotate(
+                is_favorited=Exists(
+                    Favourite.objects.filter(
+                        user=user,
+                        recipe=OuterRef('pk')
+                    )
+                ),
+                is_in_shopping_cart=Exists(
+                    Shoplist.objects.filter(
+                        user=user,
+                        recipe=OuterRef('pk')
+                    )
+                )
+            )
+
+        return Recipe.objects.all()
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
