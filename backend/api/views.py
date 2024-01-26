@@ -11,7 +11,7 @@ from .serializers import (
     UserSerializer,
     FollowSerializer,
     RecipeSerializer,
-    CreateRecipeSerializer,
+    # CreateRecipeSerializer,
     # RecipePublicSerializer,
     IngredientSerializer,
     MeasurementSerializer,
@@ -60,13 +60,13 @@ class FollowViewSet(viewsets.ModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    # serializer_class = RecipeSerializer
+    serializer_class = RecipeSerializer
     pagination_class = CustomPagination
 
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return CreateRecipeSerializer
-        return RecipeSerializer
+    # def get_serializer_class(self):
+    #     if self.action == 'create':
+    #         return CreateRecipeSerializer
+    #     return RecipeSerializer
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

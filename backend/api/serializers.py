@@ -172,18 +172,58 @@ class ShoplistSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class CreateRecipeSerializer(serializers.ModelSerializer):
-    tags = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=Tag.objects.all(), required=True,
-    )
-    ingredients = serializers.PrimaryKeyRelatedField(
+# class CreateRecipeSerializer(serializers.ModelSerializer):
+#     tags = serializers.PrimaryKeyRelatedField(
+#         many=True, queryset=Tag.objects.all(), required=True,
+#     )
+#     ingredients = serializers.PrimaryKeyRelatedField(
+#         many=True,
+#         queryset=Ingredient.objects.all(), required=True
+#     )
+#     image = serializers.ImageField(required=False, allow_null=True)
+#     is_favorited = serializers.BooleanField(
+#         default=False,
+#         read_only=True,
+#         )
+#     is_in_shopping_cart = serializers.BooleanField(
+#         default=False,
+#         read_only=True,
+#     )
+
+#     class Meta:
+#         model = Recipe
+#         fields = [
+#             'id', 'tags', 'ingredients', 'is_favorited',
+#             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
+#         ]
+
+#     def create(self, validated_data):
+#         ingredients_data = validated_data.pop('ingredients')
+
+#         recipe = Recipe.objects.create(**validated_data)
+
+#         tags_data = validated_data.pop('tags')
+#         for tag in tags_data:
+#             TagRecipe.objects.create(tag=tag, recipe=recipe)
+
+#         for ingredient in ingredients_data:
+#             # Сохраняем ингредиенты
+#             IngredientRecipe.objects.create(recipe=recipe, ingredient_id=ingredient)
+
+#         return recipe
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True, required=False)
+    author = UserSerializer()
+    ingredients = IngredientRecipeSerializer(
         many=True,
-        queryset=Ingredient.objects.all(), required=True
+        required=False
     )
-    image = serializers.ImageField(required=False, allow_null=True)
+    image = Base64ImageField(required=False, allow_null=True)
     is_favorited = serializers.BooleanField(
         default=False,
-        read_only=True,
+        read_only=True
         )
     is_in_shopping_cart = serializers.BooleanField(
         default=False,
@@ -193,7 +233,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = [
-            'id', 'tags', 'ingredients', 'is_favorited',
+            'id', 'tags', 'author', 'ingredients', 'is_favorited',
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         ]
 
@@ -211,152 +251,3 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             IngredientRecipe.objects.create(recipe=recipe, ingredient_id=ingredient)
 
         return recipe
-
-
-class RecipeSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True, required=False)
-    author = UserSerializer()
-    # ingredients = IngredientRecipeSerializer(
-    #     many=True,
-    #     source='ingredientrecipe_set'
-    # )
-    ingredient = IngredientSerializer(
-        many=True,
-        required=False
-    )
-    image = Base64ImageField(required=False, allow_null=True)
-    is_favorited = serializers.BooleanField(
-        default=False,
-        read_only=True
-        )
-    is_in_shopping_cart = serializers.BooleanField(
-        default=False,
-        read_only=True,
-    )
-
-    class Meta:
-        model = Recipe
-        fields = [
-            'id', 'tags', 'author', 'ingredient', 'is_favorited',
-            'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
-        ]
-
-
-# class RecipeSerializer(serializers.ModelSerializer):
-#     tags = serializers.PrimaryKeyRelatedField(
-#         many=True, queryset=Tag.objects.all(), required=True
-#     )
-#     ingredients = serializers.ListField(
-#         child=serializers.DictField(
-#             child=serializers.IntegerField(), required=True
-#         ), required=True
-#     )
-#     image = Base64ImageField(required=False, allow_null=True)
-#     is_favorited = serializers.SerializerMethodField()
-#     is_in_shopping_cart = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = Recipe
-#         fields = [
-#             'id', 'tags', 'author', 'ingredients', 'is_favorited',
-#             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
-#         ]
-
-#     def create(self, validated_data):
-#         tags_data = validated_data.pop('tags')
-#         ingredients_data = validated_data.pop('ingredients')
-
-#         recipe = Recipe.objects.create(**validated_data)
-
-#         for tag in tags_data:
-#             recipe.tags.add(tag)
-
-#         for ingredient_data in ingredients_data:
-#             ingredient_id = ingredient_data['id']
-#             amount = ingredient_data['amount']
-#             ingredient = Ingredient.objects.get(id=ingredient_id)
-#             IngredientRecipe.objects.create(
-#                 recipe=recipe,
-#                 ingredient=ingredient,
-#                 amount=amount
-#             )
-
-#         return recipe
-
-#     def update(self, instance, validated_data):
-#         tags_data = validated_data.pop('tags')
-#         ingredients_data = validated_data.pop('ingredients')
-
-#         instance.name = validated_data.get('name', instance.name)
-#         instance.text = validated_data.get('text', instance.text)
-#         instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
-#         instance.image = validated_data.get('image', instance.image)
-
-#         instance.tags.clear()
-#         for tag in tags_data:
-#             instance.tags.add(tag)
-
-#         instance.ingredientrecipe_set.all().delete()
-#         for ingredient_data in ingredients_data:
-#             ingredient_id = ingredient_data['id']
-#             amount = ingredient_data['amount']
-#             ingredient = Ingredient.objects.get(id=ingredient_id)
-#             IngredientRecipe.objects.create(
-#                 recipe=instance,
-#                 ingredient=ingredient,
-#                 amount=amount
-#             )
-
-#         instance.save()
-#         return instance
-
-#     def get_is_favorited(self, obj):
-#         request = self.context.get('request')
-#         if request and request.user.is_authenticated:
-#             return Favourite.objects.filter(
-#                 user=request.user, recipe=obj
-#             ).exists()
-#         return False
-
-#     def get_is_in_shopping_cart(self, obj):
-#         request = self.context.get('request')
-#         if request and request.user.is_authenticated:
-#             return Shoplist.objects.filter(
-#                 user=request.user, recipe=obj
-#             ).exists()
-#         return False
-
-
-# class RecipeSerializer(serializers.ModelSerializer):
-#     tags = TagSerializer(many=True, source='tag')
-#     author = UserSerializer()
-#     ingredients = IngredientRecipeSerializer(
-#         many=True,
-#         source='ingredientrecipe_set'
-#     )
-#     is_favorited = serializers.SerializerMethodField()
-#     is_in_shopping_cart = serializers.SerializerMethodField()
-#     image = Base64ImageField(required=False, allow_null=True)
-
-#     class Meta:
-#         model = Recipe
-#         fields = [
-#             'id', 'tags', 'author', 'ingredients', 'is_favorited',
-#             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
-#         ]
-
-#     def get_is_favorited(self, obj):
-#         request = self.context.get('request')
-#         if request and request.user.is_authenticated:
-#             return Favourite.objects.filter(
-#                 user=request.user, recipe=obj
-#             ).exists()
-#         return False
-
-#     def get_is_in_shopping_cart(self, obj):
-#         request = self.context.get('request')
-#         if request and request.user.is_authenticated:
-#             return Shoplist.objects.filter(
-#                 user=request.user, recipe=obj
-#             ).exists()
-#         return False
