@@ -247,18 +247,32 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         return serialized_data
 
-
     def create(self, validated_data):
-        ingredients_data = validated_data.pop('ingredients')
 
+        if 'tags' not in self.initial_data:
+            # То создаем рецепт без тегов
+            recipe = Recipe.objects.create(**validated_data)
+            return recipe
+
+        # Убераемсписок тэгов и ингридиентов из словаря
+        # validated_data и сохраняем их
+        tags_data = validated_data.pop('tags')
+        ingredients_data = validated_data.pop('ingredients')
+        # Сначала добавляем рецепт в БД
         recipe = Recipe.objects.create(**validated_data)
 
-        tags_data = validated_data.pop('tags')
         for tag in tags_data:
-            TagRecipe.objects.create(tag=tag, recipe=recipe)
+            current_tag, status = Tag.objects.get_or_create(
+                **tag)
+            # И связываем каждый ингредиент с этим рецептом
+            TagRecipe.objects.create(
+                tag=current_tag, recipe=recipe)
 
         for ingredient in ingredients_data:
-            # Сохраняем ингредиенты
-            IngredientRecipe.objects.create(recipe=recipe, ingredient_id=ingredient)
+            current_ingredient, status = Ingredient.objects.get_or_create(
+                **ingredient)
+            # И связываем каждый ингредиент с этим рецептом
+            IngredientRecipe.objects.create(
+                ingredient_id=current_ingredient, recipe_id=recipe)
 
         return recipe
