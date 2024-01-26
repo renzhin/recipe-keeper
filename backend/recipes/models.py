@@ -96,7 +96,7 @@ class Recipe(BaseModel):
         max_length=256,
         verbose_name='название',
     )
-    tag = models.ManyToManyField(Tag, through='TagRecipe')
+    tags = models.ManyToManyField(Tag, through='TagRecipe')
     ingredient = models.ManyToManyField(Ingredient, through='IngredientRecipe')
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='recipes'
