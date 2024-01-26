@@ -9,6 +9,7 @@ from rest_framework import serializers
 from recipes.models import (
     Follow,
     Tag,
+    TagRecipe,
     Measurement,
     Recipe,
     Ingredient,
@@ -172,20 +173,44 @@ class ShoplistSerializer(serializers.ModelSerializer):
 
 
 class CreateRecipeSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True, source='tag')
-    author = UserSerializer()
-    ingredients = IngredientRecipeSerializer(
-        many=True,
-        source='ingredientrecipe_set'
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Tag.objects.all(), required=True,
     )
-    image = Base64ImageField(required=False, allow_null=True)
+    ingredients = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Ingredient.objects.all(), required=True
+    )
+    image = serializers.ImageField(required=False, allow_null=True)
+    is_favorited = serializers.BooleanField(
+        default=False,
+        read_only=True,
+        )
+    is_in_shopping_cart = serializers.BooleanField(
+        default=False,
+        read_only=True,
+    )
 
     class Meta:
         model = Recipe
         fields = [
-            'id', 'tags', 'author', 'ingredients',
-            'name', 'image', 'text', 'cooking_time'
+            'id', 'tags', 'ingredients', 'is_favorited',
+            'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         ]
+
+    def create(self, validated_data):
+        ingredients_data = validated_data.pop('ingredients')
+
+        recipe = Recipe.objects.create(**validated_data)
+
+        tags_data = validated_data.pop('tags')
+        for tag in tags_data:
+            TagRecipe.objects.create(tag=tag, recipe=recipe)
+
+        for ingredient in ingredients_data:
+            # Сохраняем ингредиенты
+            IngredientRecipe.objects.create(recipe=recipe, ingredient_id=ingredient)
+
+        return recipe
 
 
 class RecipeSerializer(serializers.ModelSerializer):
