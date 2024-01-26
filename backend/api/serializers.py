@@ -214,11 +214,15 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True, source='tag')
+    tags = TagSerializer(many=True, required=False)
     author = UserSerializer()
-    ingredients = IngredientRecipeSerializer(
+    # ingredients = IngredientRecipeSerializer(
+    #     many=True,
+    #     source='ingredientrecipe_set'
+    # )
+    ingredient = IngredientSerializer(
         many=True,
-        source='ingredientrecipe_set'
+        required=False
     )
     image = Base64ImageField(required=False, allow_null=True)
     is_favorited = serializers.BooleanField(
@@ -233,7 +237,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = [
-            'id', 'tags', 'author', 'ingredients', 'is_favorited',
+            'id', 'tags', 'author', 'ingredient', 'is_favorited',
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         ]
 
