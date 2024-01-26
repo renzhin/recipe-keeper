@@ -216,10 +216,7 @@ class ShoplistSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, required=False)
     author = UserSerializer()
-    ingredients = IngredientRecipeSerializer(
-        many=True,
-        required=False
-    )
+    ingredients = serializers.SerializerMethodField()
     image = Base64ImageField(required=False, allow_null=True)
     is_favorited = serializers.BooleanField(
         default=False,
@@ -236,6 +233,20 @@ class RecipeSerializer(serializers.ModelSerializer):
             'id', 'tags', 'author', 'ingredients', 'is_favorited',
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         ]
+
+    def get_ingredients(self, obj):
+        # Получаем все связанные объекты IngredientRecipe для данного рецепта
+        ingredients_recipes = IngredientRecipe.objects.filter(recipe_id=obj.id)
+
+        # Сериализуем каждый объект IngredientRecipe и добавляем поле amount
+        serialized_data = []
+        for ingredient_recipe in ingredients_recipes:
+            ingredient_data = IngredientSerializer(ingredient_recipe.ingredient_id).data
+            ingredient_data['amount'] = ingredient_recipe.amount
+            serialized_data.append(ingredient_data)
+
+        return serialized_data
+
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
