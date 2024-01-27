@@ -1,5 +1,6 @@
 import base64
 
+import webcolors
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
@@ -183,6 +184,13 @@ class IngredientSub2Serializer(serializers.ModelSerializer):
             return ingredient_recipe.amount
         return None
 
+# class IngredientSub2Serializer(serializers.ModelSerializer):
+#     amount = serializers.IntegerField(source='ingredient_recipes__amount', read_only=True)
+
+#     class Meta:
+#         model = Ingredient
+#         fields = ['id', 'amount']
+
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='ingredient_id.id')
@@ -295,11 +303,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         required=False
     )
     author = UserSerializer(read_only=True)
-    # ingredients = serializers.PrimaryKeyRelatedField(
-    #     queryset=Ingredient.objects.all(),
-    #     many=True,
-    #     required=False
-    # )
     ingredients = IngredientSub2Serializer(many=True)
     image = Base64ImageField(required=False, allow_null=True)
     is_favorited = serializers.BooleanField(read_only=True)
@@ -313,36 +316,29 @@ class RecipeSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        print("Validated Data:", validated_data)
         tags_data = validated_data.pop('tags', [])
-        print("Tags Data:", tags_data)
-        ingredients_data = validated_data.pop('ingredients', [])
-        print("Ingredients Data:", ingredients_data)
+        ingredients_data = validated_data.pop('ingredients')
 
         # Создание рецепта с автором
         recipe = Recipe.objects.create(**validated_data)
-        print("Created Recipe:", recipe)
 
         # Создание связей с тегами
         for tag in tags_data:
             TagRecipe.objects.create(tag=tag, recipe=recipe)
-        print("Tags created")
 
         # Создание связей с ингредиентами
+        print("Печатаем ingredients_data:", ingredients_data)
         for ingredient_data in ingredients_data:
             ingredient_id = ingredient_data['id']
             amount = ingredient_data['amount']
 
             # Получаем объект ингредиента
             ingredient = Ingredient.objects.get(id=ingredient_id)
-            print("Ingredient:", ingredient)
 
             # Создаем связь IngredientRecipe
             IngredientRecipe.objects.create(ingredient_id=ingredient, recipe_id=recipe, amount=amount)
-        print("Ingredients created")
 
         return recipe
-
 
 
 # class RecipeSerializer(serializers.ModelSerializer):
