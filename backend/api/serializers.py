@@ -1,5 +1,5 @@
 import base64
-
+from django.shortcuts import get_object_or_404
 import webcolors
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
@@ -192,6 +192,15 @@ class IngredientSub2Serializer(serializers.ModelSerializer):
 #         fields = ['id', 'amount']
 
 
+class IngredientPostSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    amount = serializers.IntegerField()
+
+    class Meta:
+        model = IngredientRecipe
+        fields = ('id', 'amount')
+
+
 class IngredientRecipeSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='ingredient_id.id')
     name = serializers.CharField(source='ingredient_id.name')
@@ -303,7 +312,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         required=False
     )
     author = UserSerializer(read_only=True)
-    ingredients = IngredientSub2Serializer(many=True)
+    ingredients = IngredientPostSerializer(many=True)
     image = Base64ImageField(required=False, allow_null=True)
     is_favorited = serializers.BooleanField(read_only=True)
     is_in_shopping_cart = serializers.BooleanField(read_only=True)
@@ -315,12 +324,28 @@ class RecipeSerializer(serializers.ModelSerializer):
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         ]
 
+    # def validate_ingredients(self, ingredients):
+    #     ingredients_data = []
+    #     if not ingredients:
+    #         raise serializers.ValidationError(
+    #             'Ингредиенты отсутствуют в запросе')
+    #     for ingredient in ingredients:
+    #         if ingredient['id'] in ingredients_data:
+    #             raise serializers.ValidationError(
+    #                 'Ингредиенты не длжны поваторяться')
+    #         ingredients_data.append(ingredient['id'])
+    #         if int(ingredient.get('amount')) < 1:
+    #             raise serializers.ValidationError(
+    #                 'Ингредиенты отсутсвуют')
+    #     return ingredients
+
     def create(self, validated_data):
         tags_data = validated_data.pop('tags', [])
-        ingredients_data = validated_data.pop('ingredients')
+        ingredients_data = validated_data.pop('ingredients', [])
 
         # Создание рецепта с автором
         recipe = Recipe.objects.create(**validated_data)
+        print("Печатаем recipe:", recipe)
 
         # Создание связей с тегами
         for tag in tags_data:
@@ -329,12 +354,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         # Создание связей с ингредиентами
         print("Печатаем ingredients_data:", ingredients_data)
         for ingredient_data in ingredients_data:
-            ingredient_id = ingredient_data['id']
+            ingredient_idd = ingredient_data['id']
             amount = ingredient_data['amount']
+            print("Печатаем ingredient_idd:", ingredient_idd)
 
             # Получаем объект ингредиента
-            ingredient = Ingredient.objects.get(id=ingredient_id)
-
+            ingredient = get_object_or_404(Ingredient, id=ingredient_data.get('id'))
+            print("Печатаем ingredient:", ingredient)
+            print("Печатаем amount:", amount)
             # Создаем связь IngredientRecipe
             IngredientRecipe.objects.create(ingredient_id=ingredient, recipe_id=recipe, amount=amount)
 
