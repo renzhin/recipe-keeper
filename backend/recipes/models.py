@@ -130,13 +130,17 @@ class TagRecipe(models.Model):
 
 
 class IngredientRecipe(models.Model):
-    ingredient_id = models.ForeignKey(
-        Ingredient, on_delete=models.CASCADE, related_name='ingredient_recipes'
+    ingredient = models.ForeignKey(
+        Ingredient, on_delete=models.CASCADE,
+        related_name='ingredient_recipes'
     )
-    recipe_id = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE, related_name='ingredient_recipes'
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE,
+        related_name='ingredient_recipes'
     )
-    amount = models.IntegerField()
+    amount = models.IntegerField(
+        verbose_name='Количество',
+    )
 
 
 class Favourite(models.Model):

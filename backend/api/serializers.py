@@ -1,6 +1,7 @@
 import base64
-from django.shortcuts import get_object_or_404
 import webcolors
+
+from django.shortcuts import get_object_or_404
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
@@ -48,6 +49,7 @@ class Base64ImageField(serializers.ImageField):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Сериалайзер для создания пользователя и отдающий список пользователей"""
     email = serializers.EmailField(
         max_length=254,
         required=True,
@@ -97,6 +99,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CurrentUserSerializer(serializers.ModelSerializer):
+    """Сериалайзер для информации о конкеретном пользователе"""
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -115,6 +118,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
+    """Сериалайзер, работающий с подписками"""
 
     class Meta:
         model = Follow
@@ -122,6 +126,7 @@ class FollowSerializer(serializers.ModelSerializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+    """Сериалайзер, отдающий ингредиенты"""
     measurement_unit = serializers.StringRelatedField(
         source='measurement_unit.type'
     )
@@ -131,27 +136,8 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'measurement_unit']
 
 
-class IngredientWriteSerializer(serializers.ModelSerializer):
-    measurement_unit = serializers.StringRelatedField(source='measurement_unit.type')
-    amount = serializers.IntegerField(write_only=True)  # Добавляем поле amount для записи
-
-    class Meta:
-        model = Ingredient
-        fields = ['id', 'measurement_unit', 'amount']  # Убираем 'name' из списка полей
-        read_only_fields = ['name']  # Добавляем 'name' в список read-only полей
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        # Если ингредиент связан с рецептом, добавляем значение amount в выходные данные
-        if 'request' in self.context:
-            request = self.context['request']
-            ingredient_recipe = instance.ingredient_recipes.filter(recipe_id=request.data.get('id')).first()
-            if ingredient_recipe:
-                data['amount'] = ingredient_recipe.amount
-        return data
-
-
 class IngredientSubSerializer(serializers.ModelSerializer):
+    """Вложенный сериалайзер рецепта, отдающий ингредиенты с количеством"""
     measurement_unit = serializers.StringRelatedField(
         source='measurement_unit.type'
     )
@@ -170,29 +156,8 @@ class IngredientSubSerializer(serializers.ModelSerializer):
         return None
 
 
-class IngredientSub2Serializer(serializers.ModelSerializer):
-    amount = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Ingredient
-        fields = ['id', 'amount']
-
-    def get_amount(self, obj):
-        # Получаем связанный объект IngredientRecipe для данного ингредиента
-        ingredient_recipe = obj.ingredient_recipes.first()  # предполагая, что ингредиент может быть связан только с одной записью IngredientRecipe
-        if ingredient_recipe:
-            return ingredient_recipe.amount
-        return None
-
-# class IngredientSub2Serializer(serializers.ModelSerializer):
-#     amount = serializers.IntegerField(source='ingredient_recipes__amount', read_only=True)
-
-#     class Meta:
-#         model = Ingredient
-#         fields = ['id', 'amount']
-
-
 class IngredientPostSerializer(serializers.ModelSerializer):
+    """Вложенный сериалайзер создания рецепта для ингредиентов"""
     id = serializers.IntegerField()
     amount = serializers.IntegerField()
 
@@ -201,19 +166,8 @@ class IngredientPostSerializer(serializers.ModelSerializer):
         fields = ('id', 'amount')
 
 
-class IngredientRecipeSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source='ingredient_id.id')
-    name = serializers.CharField(source='ingredient_id.name')
-    measurement_unit = serializers.CharField(
-        source='ingredient_id.measurement_unit'
-    )
-
-    class Meta:
-        model = IngredientRecipe
-        fields = ['id', 'name', 'measurement_unit', 'amount']
-
-
 class MeasurementSerializer(serializers.ModelSerializer):
+    """Сериалайзер для единиц измерения"""
 
     class Meta:
         model = Measurement
@@ -221,6 +175,7 @@ class MeasurementSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    """Сериалайзер для тегов измерения"""
     color = Hex2NameColor()
 
     class Meta:
@@ -229,6 +184,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class FavouriteSerializer(serializers.ModelSerializer):
+    """Сериалайзер для изранных рецептов пользователя"""
 
     class Meta:
         model = Favourite
@@ -236,54 +192,15 @@ class FavouriteSerializer(serializers.ModelSerializer):
 
 
 class ShoplistSerializer(serializers.ModelSerializer):
+    """Сериалайзер для рецептов шоплиста пользователя"""
 
     class Meta:
         model = Shoplist
         fields = '__all__'
 
 
-# class CreateRecipeSerializer(serializers.ModelSerializer):
-#     tags = serializers.PrimaryKeyRelatedField(
-#         many=True, queryset=Tag.objects.all(), required=True,
-#     )
-#     ingredients = serializers.PrimaryKeyRelatedField(
-#         many=True,
-#         queryset=Ingredient.objects.all(), required=True
-#     )
-#     image = serializers.ImageField(required=False, allow_null=True)
-#     is_favorited = serializers.BooleanField(
-#         default=False,
-#         read_only=True,
-#         )
-#     is_in_shopping_cart = serializers.BooleanField(
-#         default=False,
-#         read_only=True,
-#     )
-
-#     class Meta:
-#         model = Recipe
-#         fields = [
-#             'id', 'tags', 'ingredients', 'is_favorited',
-#             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
-#         ]
-
-#     def create(self, validated_data):
-#         ingredients_data = validated_data.pop('ingredients')
-
-#         recipe = Recipe.objects.create(**validated_data)
-
-#         tags_data = validated_data.pop('tags')
-#         for tag in tags_data:
-#             TagRecipe.objects.create(tag=tag, recipe=recipe)
-
-#         for ingredient in ingredients_data:
-#             # Сохраняем ингредиенты
-#             IngredientRecipe.objects.create(recipe=recipe, ingredient_id=ingredient)
-
-#         return recipe
-
-
 class RecipeGetSerializer(serializers.ModelSerializer):
+    """Сериалайзер для получения информации о рецептах"""
     tags = TagSerializer(many=True, required=False)
     author = UserSerializer()
     ingredients = IngredientSubSerializer(many=True, required=False)
@@ -306,6 +223,7 @@ class RecipeGetSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
+    """Сериалайзер для создания рецепта с переопределением"""
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True,
@@ -324,21 +242,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         ]
 
-    # def validate_ingredients(self, ingredients):
-    #     ingredients_data = []
-    #     if not ingredients:
-    #         raise serializers.ValidationError(
-    #             'Ингредиенты отсутствуют в запросе')
-    #     for ingredient in ingredients:
-    #         if ingredient['id'] in ingredients_data:
-    #             raise serializers.ValidationError(
-    #                 'Ингредиенты не длжны поваторяться')
-    #         ingredients_data.append(ingredient['id'])
-    #         if int(ingredient.get('amount')) < 1:
-    #             raise serializers.ValidationError(
-    #                 'Ингредиенты отсутсвуют')
-    #     return ingredients
-
     def create(self, validated_data):
         tags_data = validated_data.pop('tags', [])
         ingredients_data = validated_data.pop('ingredients', [])
@@ -354,18 +257,49 @@ class RecipeSerializer(serializers.ModelSerializer):
         # Создание связей с ингредиентами
         print("Печатаем ingredients_data:", ingredients_data)
         for ingredient_data in ingredients_data:
-            ingredient_idd = ingredient_data['id']
+            ingredient_id = ingredient_data['id']
             amount = ingredient_data['amount']
-            print("Печатаем ingredient_idd:", ingredient_idd)
+            print("Печатаем ingredient_id:", ingredient_id)
 
             # Получаем объект ингредиента
-            ingredient = get_object_or_404(Ingredient, id=ingredient_data.get('id'))
+            ingredient = get_object_or_404(Ingredient, id=ingredient_id)
             print("Печатаем ingredient:", ingredient)
             print("Печатаем amount:", amount)
             # Создаем связь IngredientRecipe
-            IngredientRecipe.objects.create(ingredient_id=ingredient, recipe_id=recipe, amount=amount)
+            IngredientRecipe.objects.create(
+                recipe=recipe,
+                ingredient=ingredient,
+                amount=amount
+            )
 
         return recipe
+
+    # def validate_ingredients(self, ingredients):
+    #     ingredients_data = []
+    #     if not ingredients:
+    #         raise serializers.ValidationError(
+    #             'Ингредиенты отсутствуют в запросе')
+    #     for ingredient in ingredients:
+    #         if ingredient['id'] in ingredients_data:
+    #             raise serializers.ValidationError(
+    #                 'Ингредиенты не длжны поваторяться')
+    #         ingredients_data.append(ingredient['id'])
+    #         if int(ingredient.get('amount')) < 1:
+    #             raise serializers.ValidationError(
+    #                 'Ингредиенты отсутсвуют')
+    #     return ingredients
+
+
+# class IngredientRecipeSerializer(serializers.ModelSerializer):
+#     id = serializers.IntegerField(source='ingredient_id.id')
+#     name = serializers.CharField(source='ingredient_id.name')
+#     measurement_unit = serializers.CharField(
+#         source='ingredient_id.measurement_unit'
+#     )
+
+#     class Meta:
+#         model = IngredientRecipe
+#         fields = ['id', 'name', 'measurement_unit', 'amount']
 
 
 # class RecipeSerializer(serializers.ModelSerializer):
@@ -415,3 +349,36 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 #         return recipe
 
+# class IngredientWriteSerializer(serializers.ModelSerializer):
+#     measurement_unit = serializers.StringRelatedField(source='measurement_unit.type')
+#     amount = serializers.IntegerField(write_only=True)  # Добавляем поле amount для записи
+
+#     class Meta:
+#         model = Ingredient
+#         fields = ['id', 'measurement_unit', 'amount']  # Убираем 'name' из списка полей
+#         read_only_fields = ['name']  # Добавляем 'name' в список read-only полей
+
+#     def to_representation(self, instance):
+#         data = super().to_representation(instance)
+#         # Если ингредиент связан с рецептом, добавляем значение amount в выходные данные
+#         if 'request' in self.context:
+#             request = self.context['request']
+#             ingredient_recipe = instance.ingredient_recipes.filter(recipe_id=request.data.get('id')).first()
+#             if ingredient_recipe:
+#                 data['amount'] = ingredient_recipe.amount
+#         return data
+
+
+# class IngredientSub2Serializer(serializers.ModelSerializer):
+#     amount = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = Ingredient
+#         fields = ['id', 'amount']
+
+#     def get_amount(self, obj):
+#         # Получаем связанный объект IngredientRecipe для данного ингредиента
+#         ingredient_recipe = obj.ingredient_recipes.first()  # предполагая, что ингредиент может быть связан только с одной записью IngredientRecipe
+#         if ingredient_recipe:
+#             return ingredient_recipe.amount
+#         return None
