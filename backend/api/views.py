@@ -5,7 +5,6 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import OuterRef, Exists
-from django.shortcuts import get_object_or_404
 from djoser.views import TokenCreateView, TokenDestroyView
 from djoser.views import UserViewSet as DjoserUserViewSet
 
@@ -31,24 +30,33 @@ User = get_user_model()
 
 
 class CustomTokenObtainPairView(TokenCreateView):
+    """Вью для получения токена"""
+
     permission_classes = [AllowAny]
 
 
 class CustomLogoutView(TokenDestroyView):
+    """Логаут - вью удаления токена"""
+
     permission_classes = [IsAuthenticated]
 
 
 class PasswordReset(DjoserUserViewSet):
+    """Вью для изменения пароля"""
+
     permission_classes = [IsAuthenticated]
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """Вью для получения списка пользователей"""
     serializer_class = UserSerializer
     queryset = User.objects.all()
     pagination_class = CustomPagination
 
 
 class CurrentUserView(generics.RetrieveAPIView):
+    """Вью для эндпоинта me"""
+
     serializer_class = CurrentUserSerializer
     permission_classes = [IsAuthenticated]
 
@@ -62,6 +70,8 @@ class FollowViewSet(viewsets.ModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
+    """Вью для создания рецепта с готовыми энгридиентами."""
+
     queryset = Recipe.objects.all()
     # serializer_class = RecipeSerializer
     pagination_class = CustomPagination
@@ -101,7 +111,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 class AddInFavoritesView(APIView):
-    """Вью для добавления рецепта в избранное."""
+    """Вью для добавления готового рецепта в избранное."""
 
     permission_classes = [IsAuthenticated]
 
@@ -137,6 +147,8 @@ class AddInFavoritesView(APIView):
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    """Вью списка ингредиентов для эндпоина ингредиентов."""
+
     serializer_class = IngredientSerializer
     queryset = Ingredient.objects.all()
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)

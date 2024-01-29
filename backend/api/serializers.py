@@ -150,8 +150,8 @@ class IngredientSubSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'measurement_unit', 'amount']
 
     def get_amount(self, obj):
-        # Получаем связанный объект IngredientRecipe для данного ингредиента
-        # предполагая, что ингредиент может быть связан
+        # Получаем связанный объект IngredientRecipe для ингредиента
+        # ингредиент может быть связан
         # только с одной записью IngredientRecipe
         ingredient_recipe = obj.ingredient_recipes.first()
         if ingredient_recipe:
@@ -160,7 +160,7 @@ class IngredientSubSerializer(serializers.ModelSerializer):
 
 
 class IngredientInsertSerializer(serializers.ModelSerializer):
-    """Вложенный сериалайзер создания рецепта для ингредиентов"""
+    """Вложенный сериалайзер создания рецепта для ингредиентов."""
     id = serializers.IntegerField()
     amount = serializers.IntegerField()
 
@@ -170,7 +170,7 @@ class IngredientInsertSerializer(serializers.ModelSerializer):
 
 
 class MeasurementSerializer(serializers.ModelSerializer):
-    """Сериалайзер для единиц измерения"""
+    """Сериалайзер для единиц измерения."""
 
     class Meta:
         model = Measurement
@@ -178,7 +178,7 @@ class MeasurementSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
-    """Сериалайзер для тегов измерения"""
+    """Сериалайзер для тегов измерения."""
     color = Hex2NameColor()
 
     class Meta:
@@ -187,7 +187,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class FavouriteSerializer(serializers.ModelSerializer):
-    """Сериалайзер для изранных рецептов пользователя"""
+    """Сериалайзер для изранных рецептов пользователя."""
 
     class Meta:
         model = Favourite
@@ -195,7 +195,7 @@ class FavouriteSerializer(serializers.ModelSerializer):
 
 
 class ShoplistSerializer(serializers.ModelSerializer):
-    """Сериалайзер для рецептов шоплиста пользователя"""
+    """Сериалайзер для рецептов шоплиста пользователя."""
 
     class Meta:
         model = Shoplist
@@ -203,7 +203,7 @@ class ShoplistSerializer(serializers.ModelSerializer):
 
 
 class RecipeGetSerializer(serializers.ModelSerializer):
-    """Сериалайзер для получения информации о рецептах"""
+    """Сериалайзер для получения информации о рецептах."""
     tags = TagSerializer(many=True, required=False)
     author = UserSerializer()
     ingredients = IngredientSubSerializer(many=True, required=False)
@@ -226,7 +226,8 @@ class RecipeGetSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    """Сериалайзер для создания рецепта с переопределением"""
+    """Сериалайзер для создания рецепта с переопределением."""
+
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True,
@@ -318,7 +319,8 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class FavouriteRecipeSerializer(serializers.ModelSerializer):
-    """Сериализатор для представления рецептов в списке избранных."""
+    """Сериализатор для ответа на добавление в спискок избранных."""
+
     image = serializers.SerializerMethodField()
 
     class Meta:
