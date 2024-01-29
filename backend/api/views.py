@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import OuterRef, Exists, Q
+from django.db.models import OuterRef, Exists
 from djoser.views import TokenCreateView, TokenDestroyView
 from djoser.views import UserViewSet as DjoserUserViewSet
 
@@ -67,7 +67,15 @@ class CurrentUserView(generics.RetrieveAPIView):
 
 class FollowViewSet(viewsets.ModelViewSet):
     serializer_class = FollowSerializer
-    queryset = Follow.objects.all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    search_fields = ('user__username', 'following__username')
+
+    def get_queryset(self):
+        return Follow.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):

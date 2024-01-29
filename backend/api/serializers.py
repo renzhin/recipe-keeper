@@ -118,11 +118,31 @@ class CurrentUserSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
-    """Сериалайзер, работающий с подписками"""
+    user = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True,
+    )
+    following = serializers.SlugRelatedField(
+        slug_field='username',
+        queryset=User.objects.all()
+    )
 
     class Meta:
         model = Follow
-        fields = '__all__'
+        fields = ('user', 'following',)
+
+    def validate(self, data):
+        user = self.context['request'].user
+        if user == data['following']:
+            raise serializers.ValidationError(
+                "Вы не можете подписаться на себя."
+            )
+        if Follow.objects.filter(
+            user=user, following=data['following']
+        ).exists():
+            raise serializers.ValidationError(
+                "Вы уже подписаны на этого пользователя."
+            )
 
 
 class IngredientSerializer(serializers.ModelSerializer):
