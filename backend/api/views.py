@@ -1,8 +1,11 @@
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, generics, filters
+from rest_framework import viewsets, generics, filters, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import OuterRef, Exists
+from django.shortcuts import get_object_or_404
 from djoser.views import TokenCreateView, TokenDestroyView
 from djoser.views import UserViewSet as DjoserUserViewSet
 
@@ -18,6 +21,7 @@ from .serializers import (
     FavouriteSerializer,
     ShoplistSerializer,
     CurrentUserSerializer,
+    FavouriteRecipeSerializer,
 )
 from recipes.models import (
     Follow, Tag, Measurement, Ingredient, Recipe, Favourite, Shoplist
@@ -61,8 +65,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     # serializer_class = RecipeSerializer
     pagination_class = CustomPagination
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    search_fields = ('tags', 'author',)
+    filterset_fields = ('tags', 'author',)  # не работает по тегам, slug?
 
     def get_serializer_class(self):
+        # перекидываем все гет запросы на сериалайзер RecipeGetSerializer
         if self.action == 'list':
             return RecipeGetSerializer
         return RecipeSerializer
@@ -90,6 +98,42 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
 
         return Recipe.objects.all()
+
+
+class AddInFavoritesView(APIView):
+    """Вью для добавления рецепта в избранное."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            # Получаем рецепт или 404
+            recipe = Recipe.objects.get(pk=pk)
+        except Recipe.DoesNotExist:
+            return Response(
+                {"message": "Рецепт не найден"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Получаем пользователя из токена
+        user = request.user
+        # Проверяем, не добавлен ли уже рецепт в избранное
+        if Favourite.objects.filter(user=user, recipe=recipe).exists():
+            return Response(
+                {"message": "Рецепт уже добавлен в избранное"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Создаем запись об избранном
+        favourite = Favourite.objects.create(user=user, recipe=recipe)
+        # Создаем сериализатор для ответа
+        serializer = FavouriteRecipeSerializer(
+            favourite.recipe,
+            context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # return Response(
+        #     {"message": "Рецепт добавлен в избранное"},
+        #     status=status.HTTP_201_CREATED
+        # )
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):

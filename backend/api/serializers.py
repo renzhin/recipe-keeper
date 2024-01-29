@@ -315,3 +315,18 @@ class RecipeSerializer(serializers.ModelSerializer):
     #             raise serializers.ValidationError(
     #                 'Ингредиенты отсутсвуют')
     #     return ingredients
+
+
+class FavouriteRecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор для представления рецептов в списке избранных."""
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        fields = ['id', 'name', 'image', 'cooking_time']
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image:
+            return request.build_absolute_uri(obj.image.url)
+        return None

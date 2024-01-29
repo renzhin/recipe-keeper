@@ -5,11 +5,11 @@ from .views import (
     CustomLogoutView,
     PasswordReset,
     CurrentUserView,
+    AddInFavoritesView
 )
 from .views import (
     UserViewSet,
     RecipeViewSet,
-    FollowViewSet,
     IngredientViewSet,
     TagViewSet,
     )
@@ -21,7 +21,6 @@ v1_router = DefaultRouter()
 
 v1_router.register(r'users', UserViewSet, basename='users')
 v1_router.register(r'recipes', RecipeViewSet, basename='recipes')
-# v1_router.register(r'follows', FollowViewSet, basename='follows')
 v1_router.register(r'ingredients', IngredientViewSet, basename='ingredients')
 v1_router.register(r'tags', TagViewSet, basename='tags')
 
@@ -44,5 +43,10 @@ urlpatterns = [
         CurrentUserView.as_view(),
         name='current_user'
     ),
-    path('', include(v1_router.urls)),
+    path(
+        'recipes/<int:pk>/favorite/',
+        AddInFavoritesView.as_view(),
+        name='add_in_favorites'
+        ),
+    path('', include(v1_router.urls)),  # не забыть про очередность
 ]
