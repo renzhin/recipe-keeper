@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import OuterRef, Exists
+from django.db.models import OuterRef, Exists, Q
 from djoser.views import TokenCreateView, TokenDestroyView
 from djoser.views import UserViewSet as DjoserUserViewSet
 
@@ -78,7 +78,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('tags', 'author',)
-    filterset_fields = ('tags', 'author',)  # не работает по тегам, slug?
+    filterset_fields = ('tags__slug', 'author',)  # не работает по тегам, slug?
 
     def get_serializer_class(self):
         # перекидываем все гет запросы на сериалайзер RecipeGetSerializer
@@ -92,8 +92,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
+        queryset = super().get_queryset()
         if user.is_authenticated:
-            return Recipe.objects.annotate(
+            # вытаскиваем параметры из запроса
+            tags_slugs = self.request.query_params.getlist('tags')
+
+            if tags_slugs:
+                # фильтруем рецепты по переданным слагам тегов
+                queryset = queryset.filter(tags__slug__in=tags_slugs)
+
+            # анотируем запрос в "избранном" и "шоплисте"
+            queryset = queryset.annotate(
                 is_favorited=Exists(
                     Favourite.objects.filter(
                         user=user,
@@ -108,7 +117,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
             )
 
-        return Recipe.objects.all()
+        return queryset
 
 
 class AddInFavoritesView(APIView):
