@@ -10,7 +10,6 @@ from rest_framework import serializers
 from recipes.models import (
     Follow,
     Tag,
-    TagRecipe,
     Measurement,
     Recipe,
     Ingredient,
@@ -211,7 +210,7 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     is_favorited = serializers.BooleanField(
         default=False,
         read_only=True
-        )
+    )
     is_in_shopping_cart = serializers.BooleanField(
         default=False,
         read_only=True,
