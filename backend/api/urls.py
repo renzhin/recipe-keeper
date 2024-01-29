@@ -5,7 +5,8 @@ from .views import (
     CustomLogoutView,
     PasswordReset,
     CurrentUserView,
-    AddInFavoritesView
+    AddInFavoritesView,
+    AddInShoplistView,
 )
 from .views import (
     UserViewSet,
@@ -46,6 +47,11 @@ urlpatterns = [
     path(
         'recipes/<int:pk>/favorite/',
         AddInFavoritesView.as_view(),
+        name='add_in_favorites'
+        ),
+    path(
+        'recipes/<int:pk>/shopping_cart/',
+        AddInShoplistView.as_view(),
         name='add_in_favorites'
         ),
     path('', include(v1_router.urls)),  # не забыть про очередность

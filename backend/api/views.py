@@ -21,6 +21,7 @@ from .serializers import (
     ShoplistSerializer,
     CurrentUserSerializer,
     FavouriteRecipeSerializer,
+    ShoplistRecipeSerializer,
 )
 from recipes.models import (
     Follow, Tag, Measurement, Ingredient, Recipe, Favourite, Shoplist
@@ -117,7 +118,7 @@ class AddInFavoritesView(APIView):
 
     def post(self, request, pk):
         try:
-            # Получаем рецепт или 404
+            # Получаем рецепт
             recipe = Recipe.objects.get(pk=pk)
         except Recipe.DoesNotExist:
             return Response(
@@ -144,6 +145,38 @@ class AddInFavoritesView(APIView):
         #     {"message": "Рецепт добавлен в избранное"},
         #     status=status.HTTP_201_CREATED
         # )
+
+
+class AddInShoplistView(APIView):
+    """Вью для добавления готового рецепта в шоплист."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            # Получаем рецепт
+            recipe = Recipe.objects.get(pk=pk)
+        except Recipe.DoesNotExist:
+            return Response(
+                {"message": "Рецепт не найден"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Получаем пользователя из токена
+        user = request.user
+        # Проверяем, не добавлен ли уже рецепт в шоплист
+        if Shoplist.objects.filter(user=user, recipe=recipe).exists():
+            return Response(
+                {"message": "Рецепт уже добавлен в шоплист"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Создаем запись в шоплисте
+        favourite = Shoplist.objects.create(user=user, recipe=recipe)
+        # Создаем сериализатор для ответа
+        serializer = ShoplistRecipeSerializer(
+            favourite.recipe,
+            context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):

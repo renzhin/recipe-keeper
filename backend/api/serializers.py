@@ -319,7 +319,23 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class FavouriteRecipeSerializer(serializers.ModelSerializer):
-    """Сериализатор для ответа на добавление в спискок избранных."""
+    """Сериализатор для ответа на добавление рецепта в спискок избранных."""
+
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        fields = ['id', 'name', 'image', 'cooking_time']
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image:
+            return request.build_absolute_uri(obj.image.url)
+        return None
+
+
+class ShoplistRecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор для ответа на добавление рецепта в шоплист."""
 
     image = serializers.SerializerMethodField()
 
