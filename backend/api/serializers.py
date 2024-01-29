@@ -302,21 +302,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
         return serializer.data
 
-    # def validate_ingredients(self, ingredients):
-    #     ingredients_data = []
-    #     if not ingredients:
-    #         raise serializers.ValidationError(
-    #             'Ингредиенты отсутствуют в запросе')
-    #     for ingredient in ingredients:
-    #         if ingredient['id'] in ingredients_data:
-    #             raise serializers.ValidationError(
-    #                 'Ингредиенты не длжны поваторяться')
-    #         ingredients_data.append(ingredient['id'])
-    #         if int(ingredient.get('amount')) < 1:
-    #             raise serializers.ValidationError(
-    #                 'Ингредиенты отсутсвуют')
-    #     return ingredients
-
 
 class FavouriteRecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для ответа на добавление рецепта в спискок избранных."""

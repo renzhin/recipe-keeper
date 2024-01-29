@@ -5,7 +5,7 @@ from recipes.models import Measurement, Ingredient
 
 
 class Command(BaseCommand):
-    help = 'Import data from JSON file to Django models'
+    help = 'Импортирование даты JSON в модель джанго'
 
     def handle(self, *args, **options):
         json_file_path = '../data/ingredients.json'
@@ -15,10 +15,12 @@ class Command(BaseCommand):
         with open(json_file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
             for item in data:
+                # Получаем или создаем экземпляр модели Measurement
                 measurement_instance, created = Measurement.objects.get_or_create(
                     type=item['measurement_unit']
                 )
                 item['measurement_unit'] = measurement_instance
+                # Создаем экземпляр модели Ingredient и сохраняем его
                 ingredient_instance = Ingredient(**item)
                 ingredient_instance.save()
 
