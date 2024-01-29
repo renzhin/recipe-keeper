@@ -30,7 +30,7 @@ urlpatterns = [
         'auth/token/login/',
         CustomTokenObtainPairView.as_view(),
         name='token_obtain_pair'
-        ),
+    ),
     path('auth/token/logout/',
          CustomLogoutView.as_view(),
          name='logout'),
@@ -48,11 +48,11 @@ urlpatterns = [
         'recipes/<int:pk>/favorite/',
         AddInFavoritesView.as_view(),
         name='add_in_favorites'
-        ),
+    ),
     path(
         'recipes/<int:pk>/shopping_cart/',
         AddInShoplistView.as_view(),
         name='add_in_favorites'
-        ),
+    ),
     path('', include(v1_router.urls)),  # не забыть про очередность
 ]
