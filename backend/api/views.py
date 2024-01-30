@@ -85,25 +85,35 @@ class FollowViewSet(viewsets.ModelViewSet):
 
 
 class UserFollowView(APIView):
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
     def post(self, request, id):
-        # Получаем пользователя, на которого нужно подписаться
         user_to_subscribe = get_object_or_404(User, id=id)
-        # Получаем текущего пользователя, который хочет подписаться
         user = request.user
 
         # Проверяем, что пользователь не пытается подписаться на самого себя
-        if user != user_to_subscribe:
-            # Создаем запись подписки
-            _, created = Follow.objects.get_or_create(
-                follower=user,
-                following=user_to_subscribe
-            )
-        else:
-            # Если пользователь пытается подписаться на себя, возвращаем ошибку
+        if user == user_to_subscribe:
             return Response(
                 {'error': 'Вы не можете подписаться на себя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        # Проверяем, существует ли уже запись подписки между пользователями
+        if Follow.objects.filter(
+            follower=user,
+            following=user_to_subscribe
+        ).exists():
+            return Response(
+                {'error': 'Вы уже подписаны на этого пользователя'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Создаем запись подписки
+        _, created = Follow.objects.get_or_create(
+            follower=user,
+            following=user_to_subscribe
+        )
 
         # перенаправляем на сериалайзер, чтобы получить ответ как в ReDoc
         serializer = FollowCreateSerializer(user_to_subscribe)
