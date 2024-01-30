@@ -302,14 +302,37 @@ class RecipeSerializer(serializers.ModelSerializer):
         return serializer.data
 
 
+class FollowRecipeInsertSerializer(serializers.ModelSerializer):
+    """Сабсериалайзер рецептов автора, на кого подписан пользователь."""
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
 class FollowCreateSerializer(serializers.ModelSerializer):
+    """Сериалайзер создания подписки."""
+
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = FollowRecipeInsertSerializer(many=True)
+    recipes_count = serializers.SerializerMethodField(
+        method_name='get_recipes_count'
+    )
+
     class Meta:
         model = User
-        fields = '__all__'
-        # fields = [
-        #     'id', 'email', 'username', 'first_name',
-        #     'last_name', 'is_subscribed', 'recipes', 'recipes_count'
-        # ]
+        fields = [
+            'email', 'id', 'username', 'first_name',
+            'last_name', 'is_subscribed', 'recipes', 'recipes_count'
+        ]
+
+    def get_is_subscribed(self, obj):  # пока здесь заглушка
+        return False
+
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(
+            author=obj
+        ).count()
 
 
 class FavouriteRecipeSerializer(serializers.ModelSerializer):

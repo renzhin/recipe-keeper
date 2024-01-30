@@ -117,7 +117,10 @@ class UserFollowView(APIView):
 
         # перенаправляем на сериалайзер, чтобы получить ответ как в ReDoc
         serializer = FollowCreateSerializer(user_to_subscribe)
-        return Response(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED
+        )
 
     def delete(self, request, id):
         # Получаем пользователя, от которого нужно отписаться
