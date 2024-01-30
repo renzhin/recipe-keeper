@@ -1,9 +1,10 @@
-from django.contrib.auth import get_user_model
 from rest_framework import viewsets, generics, filters, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
+from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 from django.db.models import OuterRef, Exists
 from djoser.views import TokenCreateView, TokenDestroyView
 from djoser.views import UserViewSet as DjoserUserViewSet
@@ -12,6 +13,7 @@ from api.pagination import CustomPagination
 from .serializers import (
     UserSerializer,
     FollowSerializer,
+    FollowCreateSerializer,
     RecipeSerializer,
     RecipeGetSerializer,
     IngredientSerializer,
@@ -76,6 +78,46 @@ class FollowViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+class UserFollowView(APIView):
+    def post(self, request, id):
+        # Получаем пользователя, на которого нужно подписаться
+        user_to_subscribe = get_object_or_404(User, id=id)
+        # Получаем текущего пользователя, который хочет подписаться
+        user = request.user
+
+        # Проверяем, что пользователь не пытается подписаться на самого себя
+        if user != user_to_subscribe:
+            # Создаем запись подписки
+            _, created = Follow.objects.get_or_create(
+                follower=user,
+                following=user_to_subscribe
+            )
+        else:
+            # Если пользователь пытается подписаться на себя, возвращаем ошибку
+            return Response(
+                {'error': 'Вы не можете подписаться на себя'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # перенаправляем на сериалайзер, чтобы получить ответ как в ReDoc
+        serializer = FollowCreateSerializer(user_to_subscribe)
+        return Response(serializer.data)
+
+    def delete(self, request, id):
+        # Получаем пользователя, от которого нужно отписаться
+        user_to_unsubscribe = get_object_or_404(User, id=id)
+        # Получаем текущего пользователя, который хочет отписаться
+        user = request.user
+
+        # Удаляем запись подписки
+        Follow.objects.filter(
+            follower=user,
+            following=user_to_unsubscribe
+        ).delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):

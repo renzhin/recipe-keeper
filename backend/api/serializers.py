@@ -118,31 +118,11 @@ class CurrentUserSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
-    user = serializers.SlugRelatedField(
-        slug_field='username',
-        read_only=True,
-    )
-    following = serializers.SlugRelatedField(
-        slug_field='username',
-        queryset=User.objects.all()
-    )
+    """Сериалайзер, работающий с подписками"""
 
     class Meta:
         model = Follow
-        fields = ('user', 'following',)
-
-    def validate(self, data):
-        user = self.context['request'].user
-        if user == data['following']:
-            raise serializers.ValidationError(
-                "Вы не можете подписаться на себя."
-            )
-        if Follow.objects.filter(
-            user=user, following=data['following']
-        ).exists():
-            raise serializers.ValidationError(
-                "Вы уже подписаны на этого пользователя."
-            )
+        fields = '__all__'
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -320,6 +300,16 @@ class RecipeSerializer(serializers.ModelSerializer):
             context={'request': self.context.get('request')}
         )
         return serializer.data
+
+
+class FollowCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = '__all__'
+        # fields = [
+        #     'id', 'email', 'username', 'first_name',
+        #     'last_name', 'is_subscribed', 'recipes', 'recipes_count'
+        # ]
 
 
 class FavouriteRecipeSerializer(serializers.ModelSerializer):
