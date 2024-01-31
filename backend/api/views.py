@@ -87,7 +87,7 @@ class FollowViewSet(viewsets.ModelViewSet):
 class UserFollowListView(APIView):
     """Вью получения списка всех подписок на пользователя."""
     def get(self, request, format=None):
-        # Получаем список всех пользователей, на которых подписан текущий пользователь
+        # Получаем список всех пользователей, на которых подписан текущий
         subscriptions = User.objects.filter(followers__follower=request.user)
         # Применяем вашу кастомную пагинацию
         paginator = CustomPagination()
@@ -104,14 +104,12 @@ class UserFollowView(APIView):
     def post(self, request, id):
         user_to_subscribe = get_object_or_404(User, id=id)
         user = request.user
-
         # Проверяем, что пользователь не пытается подписаться на самого себя
         if user == user_to_subscribe:
             return Response(
                 {'error': 'Вы не можете подписаться на себя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         # Проверяем, существует ли уже запись подписки между пользователями
         if Follow.objects.filter(
             follower=user,
@@ -121,7 +119,6 @@ class UserFollowView(APIView):
                 {'error': 'Вы уже подписаны на этого пользователя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         # Создаем запись подписки
         _, created = Follow.objects.get_or_create(
             follower=user,
@@ -140,7 +137,6 @@ class UserFollowView(APIView):
         user_to_unsubscribe = get_object_or_404(User, id=id)
         # Получаем текущего пользователя, который хочет отписаться
         user = request.user
-
         # Удаляем запись подписки
         Follow.objects.filter(
             follower=user,
@@ -177,11 +173,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if user.is_authenticated:
             # вытаскиваем параметры из запроса
             tags_slugs = self.request.query_params.getlist('tags')
-
+            
             if tags_slugs:
                 # фильтруем рецепты по переданным слагам тегов
                 queryset = queryset.filter(tags__slug__in=tags_slugs)
-
             # анотируем запрос в "избранном" и "шоплисте"
             queryset = queryset.annotate(
                 is_favorited=Exists(
