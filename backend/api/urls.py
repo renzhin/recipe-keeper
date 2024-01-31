@@ -7,7 +7,8 @@ from .views import (
     CurrentUserView,
     AddInFavoritesView,
     AddInShoplistView,
-    UserFollowView
+    UserFollowView,
+    UserFollowListView
 )
 from .views import (
     UserViewSet,
@@ -52,6 +53,11 @@ urlpatterns = [
         'users/<int:id>/subscribe/',
         UserFollowView.as_view(),
         name='user_subscribe'
+    ),
+    path(
+        'users/subscriptions/',
+        UserFollowListView.as_view(),
+        name='user_subscribe_list'
     ),
     path(
         'recipes/<int:pk>/favorite/',

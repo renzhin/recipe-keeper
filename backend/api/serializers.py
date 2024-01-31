@@ -328,6 +328,15 @@ class FollowCreateSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):  # пока здесь заглушка
         return False
+    # def get_recipe(self, obj):
+    #     request = self.context.get('request')
+    #     recipes_limit = request.GET.get('recipes_limit')
+    #     recipes = obj.recipes.all()
+    #     if recipes_limit:
+    #         recipes = recipes[:int(recipes_limit)]
+    #     return FollowRecipeInsertSerializer(
+    #         recipes,
+    #         many=True).data
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(

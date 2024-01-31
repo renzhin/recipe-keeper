@@ -84,7 +84,20 @@ class FollowViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
+class UserFollowListView(APIView):
+    """Вью получения списка всех подписок на пользователя."""
+    def get(self, request, format=None):
+        # Получаем список всех пользователей, на которых подписан текущий пользователь
+        subscriptions = User.objects.filter(followers__follower=request.user)
+        # Применяем вашу кастомную пагинацию
+        paginator = CustomPagination()
+        result_page = paginator.paginate_queryset(subscriptions, request)
+        serializer = FollowCreateSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
 class UserFollowView(APIView):
+    """Вью для создания и удаления подписки на пользователя."""
 
     permission_classes = [IsAuthenticatedOrReadOnly]
 
