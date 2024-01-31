@@ -162,11 +162,17 @@ class Favourite(models.Model):
 
 class Shoplist(models.Model):
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE,
+        User,
+        on_delete=models.CASCADE,
+        related_name='shops',
         blank=True,
         null=True,
     )
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='shops',
+    )
 
     def __str__(self):
         return f"{self.recipe} в списке покупок {self.user}"

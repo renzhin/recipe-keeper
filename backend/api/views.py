@@ -6,6 +6,8 @@ from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly,
     AllowAny
 )
+from django.http import HttpResponse
+from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
@@ -30,7 +32,8 @@ from .serializers import (
     ShoplistRecipeSerializer,
 )
 from recipes.models import (
-    Follow, Tag, Measurement, Ingredient, Recipe, Favourite, Shoplist
+    Follow, Tag, Measurement, Ingredient,
+    Recipe, Favourite, Shoplist
 )
 
 User = get_user_model()
@@ -173,7 +176,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if user.is_authenticated:
             # вытаскиваем параметры из запроса
             tags_slugs = self.request.query_params.getlist('tags')
-            
+
             if tags_slugs:
                 # фильтруем рецепты по переданным слагам тегов
                 queryset = queryset.filter(tags__slug__in=tags_slugs)
@@ -262,6 +265,34 @@ class AddInShoplistView(APIView):
             context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class DownloadShoppingCart(APIView):
+    """Вью для скачивания списка покупок."""
+
+    def get(self, request):
+        # Получаем ингредиенты для рецептов в списке покупок текущего юзера
+        user_shoplist = Shoplist.objects.filter(
+            user=request.user
+        ).values_list(
+            'recipe__ingredient_recipes__ingredient__name',
+            'recipe__ingredient_recipes__ingredient__measurement_unit',
+        ).annotate(
+            total_amount=Sum('recipe__ingredient_recipes__amount')
+        )
+
+        # Формируем текст списка покупок
+        shopping_list = ['Список покупок:\n']
+        for ingredient in user_shoplist:
+            name = ingredient[0]
+            unit = ingredient[1]
+            amount = ingredient[2]
+            shopping_list.append(f'\n{name} - {amount}, {unit}')
+
+        # Создаем HTTP-ответ с содержимым списка покупок
+        response = HttpResponse(shopping_list, content_type='text/plain')
+        response['Content-Disposition'] = 'attachment; filename="shoplst.txt"'
+        return response
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):

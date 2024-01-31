@@ -8,7 +8,8 @@ from .views import (
     AddInFavoritesView,
     AddInShoplistView,
     UserFollowView,
-    UserFollowListView
+    UserFollowListView,
+    DownloadShoppingCart
 )
 from .views import (
     UserViewSet,
@@ -68,6 +69,11 @@ urlpatterns = [
         'recipes/<int:pk>/shopping_cart/',
         AddInShoplistView.as_view(),
         name='add_in_favorites'
+    ),
+    path(
+        'recipes/download_shopping_cart/',
+        DownloadShoppingCart.as_view(),
+        name='download_shopping_cart'
     ),
     path('', include(v1_router.urls)),  # не забыть про очередность
 ]
