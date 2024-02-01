@@ -230,11 +230,14 @@ class RecipeSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True,
-        required=False
+        required=True
     )
     author = UserSerializer(read_only=True)
-    ingredients = IngredientInsertSerializer(many=True)
-    image = Base64ImageField(required=False, allow_null=True)
+    ingredients = IngredientInsertSerializer(
+        many=True,
+        required=True
+    )
+    image = Base64ImageField(required=True, allow_null=True)
     is_favorited = serializers.BooleanField(read_only=True)
     is_in_shopping_cart = serializers.BooleanField(read_only=True)
 
@@ -300,6 +303,25 @@ class RecipeSerializer(serializers.ModelSerializer):
             context={'request': self.context.get('request')}
         )
         return serializer.data
+
+    def validate_tags(self, value):
+        # Проверяем, чтобы не было попытки добавить два одинаковых тега
+        uniq_tags = set(value)
+        if len(value) == 0:
+            raise serializers.ValidationError(
+                "Попытка передать пустой список тегов."
+                )
+        elif len(value) != len(uniq_tags):
+            raise serializers.ValidationError(
+                "Попытка добавить два идентичных тега."
+                )
+        # Проверяем, что переданные теги существуют в базе
+        for tag in value:
+            if not Tag.objects.filter(pk=tag.pk).exists():
+                raise serializers.ValidationError(
+                    "Тэг или несколько тегов отсутствуют в базе данных."
+                )
+        return value
 
 
 class FollowRecipeInsertSerializer(serializers.ModelSerializer):
