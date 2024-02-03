@@ -6,6 +6,7 @@ from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
+# from rest_framework.exceptions import PermissionDenied
 
 from recipes.models import (
     Follow,
@@ -17,7 +18,9 @@ from recipes.models import (
     Favourite,
     Shoplist,
 )
-from recipes.validators import validate_me, username_validator
+from recipes.validators import (
+    validate_me, username_validator, validate_cooking_time
+)
 
 User = get_user_model()
 
@@ -113,7 +116,10 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             'is_subscribed'
         ]
 
-    def get_is_subscribed(self, obj):  # пока здесь заглушка
+    def get_is_subscribed(self, obj):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            return Follow.objects.filter(follower=user, following=obj).exists()
         return False
 
 
@@ -237,9 +243,15 @@ class RecipeSerializer(serializers.ModelSerializer):
         many=True,
         required=True
     )
+    name = serializers.CharField(
+        max_length=200,
+    )
     image = Base64ImageField(required=True, allow_null=True)
     is_favorited = serializers.BooleanField(read_only=True)
     is_in_shopping_cart = serializers.BooleanField(read_only=True)
+    cooking_time = serializers.IntegerField(
+        validators=[validate_cooking_time]
+    )
 
     class Meta:
         model = Recipe
@@ -247,6 +259,56 @@ class RecipeSerializer(serializers.ModelSerializer):
             'id', 'tags', 'author', 'ingredients', 'is_favorited',
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         ]
+
+    def validate_tags(self, value):
+        # Проверяем, чтобы не было попытки добавить два одинаковых тега
+        uniq_tags = set(value)
+        if len(value) == 0:
+            raise serializers.ValidationError(
+                "Попытка передать пустой список тегов."
+                )
+        elif len(value) != len(uniq_tags):
+            raise serializers.ValidationError(
+                "Попытка добавить два или более идентичных тега."
+                )
+        # Проверяем, что переданные теги существуют в базе
+        for tag in value:
+            if not Tag.objects.filter(pk=tag.pk).exists():
+                raise serializers.ValidationError(
+                    "Тэг или несколько тегов отсутствуют в базе данных."
+                )
+        return value
+
+    def validate_ingredients(self, value):
+        print(value)
+        if not value:
+            raise serializers.ValidationError(
+                'Нет ни одного ингредиента'
+            )
+        ingredients = [item['id'] for item in value]
+        uniq_ingredients = set(ingredients)
+
+        if len(uniq_ingredients) == 0:
+            raise serializers.ValidationError(
+                "Попытка передать пустой список ингредиентов."
+            )
+        elif len(ingredients) != len(uniq_ingredients):
+            raise serializers.ValidationError(
+                "Попытка добавить два или более идентичных ингредиента."
+            )
+        # Проверяем наличие ингредиентов в базе данных и их количество
+        for item in value:
+            ingredient = item['id']
+            amount = item['amount']
+            if amount < 1:
+                raise serializers.ValidationError(
+                    f"Кол-во ингредиента с id {ingredient} должно быть >= 1."
+                )
+            if not Ingredient.objects.filter(pk=ingredient).exists():
+                raise serializers.ValidationError(
+                    f"Ингредиент с id {ingredient} отсутствует в базе данных."
+                )
+        return value
 
     def create(self, validated_data):
         tags_data = validated_data.pop('tags', [])
@@ -272,17 +334,20 @@ class RecipeSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
+        # Проверяем, что пользователь пытается обновить свой собственный рецепт
+        # if instance.author != self.context['request'].user:
+        #     raise PermissionDenied("Вы не можете редактировать чужой рецепт")
+        ingredients_data = validated_data.pop('ingredients', [])
+        self.validate_ingredients(ingredients_data)
+        tags_data = validated_data.pop('tags', [])
+        self.validate_tags(tags_data)
         # Первым делом, удаляем все существующие теги
         instance.tags.clear()
-        # Получаем данные о тегах из validated_data
-        tags_data = validated_data.pop('tags', [])
         # Добавляем новые теги к рецепту
         for tag in tags_data:
             instance.tags.add(tag)
         # Удаляем все связи с ингредиентами
         instance.ingredients.clear()
-        # Получаем данные об ингредиентах из validated_data
-        ingredients_data = validated_data.pop('ingredients', [])
         # Создаем новые связи для ингредиентов
         for ingredient_data in ingredients_data:
             ingredient_id = ingredient_data['id']
@@ -295,7 +360,8 @@ class RecipeSerializer(serializers.ModelSerializer):
                 ingredient=ingredient,
                 amount=amount
             )
-        return instance
+        return super().update(
+            instance, validated_data)
 
     def to_representation(self, instance):
         serializer = RecipeGetSerializer(
@@ -303,25 +369,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             context={'request': self.context.get('request')}
         )
         return serializer.data
-
-    def validate_tags(self, value):
-        # Проверяем, чтобы не было попытки добавить два одинаковых тега
-        uniq_tags = set(value)
-        if len(value) == 0:
-            raise serializers.ValidationError(
-                "Попытка передать пустой список тегов."
-            )
-        elif len(value) != len(uniq_tags):
-            raise serializers.ValidationError(
-                "Попытка добавить два идентичных тега."
-            )
-        # Проверяем, что переданные теги существуют в базе
-        for tag in value:
-            if not Tag.objects.filter(pk=tag.pk).exists():
-                raise serializers.ValidationError(
-                    "Тэг или несколько тегов отсутствуют в базе данных."
-                )
-        return value
 
 
 class FollowRecipeInsertSerializer(serializers.ModelSerializer):
@@ -350,6 +397,7 @@ class FollowCreateSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):  # пока здесь заглушка
         return False
+
     # def get_recipe(self, obj):
     #     request = self.context.get('request')
     #     recipes_limit = request.GET.get('recipes_limit')

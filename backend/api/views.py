@@ -16,6 +16,7 @@ from djoser.views import TokenCreateView, TokenDestroyView
 from djoser.views import UserViewSet as DjoserUserViewSet
 
 from api.pagination import CustomPagination
+from api.permissions import IsRecipeAuthorOrReadOnly
 from .serializers import (
     UserSerializer,
     FollowSerializer,
@@ -140,19 +141,25 @@ class UserFollowView(APIView):
         user_to_unsubscribe = get_object_or_404(User, id=id)
         # Получаем текущего пользователя, который хочет отписаться
         user = request.user
-        # Удаляем запись подписки
-        Follow.objects.filter(
+        # Проверяем, существует ли запись подписки между пользователями
+        follow_inst = Follow.objects.filter(
             follower=user,
             following=user_to_unsubscribe
-        ).delete()
-
+        ).first()
+        if not follow_inst:
+            return Response(
+                {'error': 'Подписка не существует'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Удаляем запись подписки
+        follow_inst.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     """Вью для создания рецепта с готовыми энгридиентами."""
 
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsRecipeAuthorOrReadOnly]
     queryset = Recipe.objects.all()
     # serializer_class = RecipeSerializer
     pagination_class = CustomPagination
@@ -175,11 +182,42 @@ class RecipeViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         if user.is_authenticated:
             # вытаскиваем параметры из запроса
-            tags_slugs = self.request.query_params.getlist('tags')
+            tags_slugs = self.request.query_params.getlist(
+                'tags'
+            )
+            is_favorited = self.request.query_params.get(
+                'is_favorited'
+            )
+            is_in_shopping_cart = self.request.query_params.get(
+                'is_in_shopping_cart'
+            )
 
             if tags_slugs:
                 # фильтруем рецепты по переданным слагам тегов
                 queryset = queryset.filter(tags__slug__in=tags_slugs)
+
+            if is_favorited:
+                # фильтруем рецепты, добавленные в избранное пользователем
+                queryset = queryset.annotate(
+                    is_favorited=Exists(
+                        Favourite.objects.filter(
+                            user=user,
+                            recipe=OuterRef('pk')
+                        )
+                    )
+                ).filter(is_favorited=True)
+
+            if is_in_shopping_cart:
+                # фильтруем рецепты, добавленные в шоплист
+                queryset = queryset.annotate(
+                    is_in_shopping_cart=Exists(
+                        Favourite.objects.filter(
+                            user=user,
+                            recipe=OuterRef('pk')
+                        )
+                    )
+                ).filter(is_in_shopping_cart=True)
+
             # анотируем запрос в "избранном" и "шоплисте"
             queryset = queryset.annotate(
                 is_favorited=Exists(
@@ -229,10 +267,24 @@ class AddInFavoritesView(APIView):
             context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-        # return Response(
-        #     {"message": "Рецепт добавлен в избранное"},
-        #     status=status.HTTP_201_CREATED
-        # )
+
+    def delete(self, request, pk):
+        # Получаем пользователя из токена
+        user = request.user
+        # Получаем рецепт или выбрасываем 404, если он не существует
+        recipe = get_object_or_404(Recipe, pk=pk)
+        # Проверяем, добавлен ли рецепт в избранное пользователя
+        if not Favourite.objects.filter(user=user, recipe=recipe).exists():
+            return Response(
+                {"message": "Рецепт не был добавлен в ваш список избранного"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Удаляем запись об избранном
+        Favourite.objects.filter(user=user, recipe=recipe).delete()
+        return Response(
+            {"message": "Рецепт успешно удален из вашего списка избранного"},
+            status=status.HTTP_204_NO_CONTENT
+        )
 
 
 class AddInShoplistView(APIView):
@@ -265,6 +317,24 @@ class AddInShoplistView(APIView):
             context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, pk):
+        # Получаем пользователя из токена
+        user = request.user
+        # Получаем рецепт или выбрасываем 404, если он не существует
+        recipe = get_object_or_404(Recipe, pk=pk)
+        # Проверяем, добавлен ли рецепт шоплист пользователя
+        if not Shoplist.objects.filter(user=user, recipe=recipe).exists():
+            return Response(
+                {"message": "Рецепт не был добавлен в ваш шоплист"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Удаляем запись об избранном
+        Shoplist.objects.filter(user=user, recipe=recipe).delete()
+        return Response(
+            {"message": "Рецепт успешно удален из вашего шоплиста"},
+            status=status.HTTP_204_NO_CONTENT
+        )
 
 
 class DownloadShoppingCart(APIView):
