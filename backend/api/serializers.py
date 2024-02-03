@@ -310,11 +310,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         if len(value) == 0:
             raise serializers.ValidationError(
                 "Попытка передать пустой список тегов."
-                )
+            )
         elif len(value) != len(uniq_tags):
             raise serializers.ValidationError(
                 "Попытка добавить два идентичных тега."
-                )
+            )
         # Проверяем, что переданные теги существуют в базе
         for tag in value:
             if not Tag.objects.filter(pk=tag.pk).exists():
