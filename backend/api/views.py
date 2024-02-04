@@ -52,9 +52,9 @@ class UserViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
 
     @action(
-            detail=False, methods=['get'],
-            url_path='me',
-            permission_classes=[IsAuthenticated,]
+        detail=False, methods=['get'],
+        url_path='me',
+        permission_classes=[IsAuthenticated,]
     )
     def me(self, request):
         serializer = CurrentUserSerializer(
