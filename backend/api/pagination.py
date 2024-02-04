@@ -4,4 +4,5 @@ from rest_framework.pagination import (
 
 
 class CustomPagination(LimitOffsetPagination):
-    default_limit = 1000
+    default_limit = 100  # Стандартный лимит по умолчанию
+    max_limit = 1000  # Максимальный лимит страницы

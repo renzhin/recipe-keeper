@@ -1,10 +1,10 @@
-from rest_framework import viewsets, generics, filters, status
+from rest_framework import viewsets, filters, status
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import (
     IsAuthenticated,
     IsAuthenticatedOrReadOnly,
-    AllowAny
 )
 from django.http import HttpResponse
 from django.db.models import Sum
@@ -12,7 +12,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.db.models import OuterRef, Exists
-from djoser.views import TokenCreateView, TokenDestroyView
 from djoser.views import UserViewSet as DjoserUserViewSet
 
 from api.pagination import CustomPagination
@@ -20,62 +19,52 @@ from api.permissions import IsRecipeAuthorOrReadOnly
 from .serializers import (
     UserSerializer,
     FollowSerializer,
-    FollowCreateSerializer,
+    FollowCreateListSerializer,
     RecipeSerializer,
     RecipeGetSerializer,
     IngredientSerializer,
-    MeasurementSerializer,
     TagSerializer,
-    FavouriteSerializer,
-    ShoplistSerializer,
     CurrentUserSerializer,
-    FavouriteRecipeSerializer,
-    ShoplistRecipeSerializer,
+    FavouriteShoplistRecipeSerializer
 )
 from recipes.models import (
-    Follow, Tag, Measurement, Ingredient,
-    Recipe, Favourite, Shoplist
+    Follow,
+    Tag,
+    Ingredient,
+    Recipe,
+    Favourite,
+    Shoplist
 )
 
 User = get_user_model()
 
 
-class CustomTokenObtainPairView(TokenCreateView):
-    """Вью для получения токена"""
-
-    permission_classes = [AllowAny]
-
-
-class CustomLogoutView(TokenDestroyView):
-    """Логаут - вью удаления токена"""
-
-    permission_classes = [IsAuthenticated]
-
-
 class PasswordReset(DjoserUserViewSet):
-    """Вью для изменения пароля"""
+    """Вьюcет для изменения пароля"""
 
     permission_classes = [IsAuthenticated]
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    """Вью для получения списка пользователей"""
+    """Вьюсет для пользователей и me"""
     serializer_class = UserSerializer
     queryset = User.objects.all()
     pagination_class = CustomPagination
 
-
-class CurrentUserView(generics.RetrieveAPIView):
-    """Вью для эндпоинта me"""
-
-    serializer_class = CurrentUserSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        return self.request.user
+    @action(
+            detail=False, methods=['get'],
+            url_path='me',
+            permission_classes=[IsAuthenticated,]
+    )
+    def me(self, request):
+        serializer = CurrentUserSerializer(
+            request.user, context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class FollowViewSet(viewsets.ModelViewSet):
+    """Вьюсет для подписсок"""
     serializer_class = FollowSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
@@ -90,13 +79,16 @@ class FollowViewSet(viewsets.ModelViewSet):
 
 class UserFollowListView(APIView):
     """Вью получения списка всех подписок на пользователя."""
+
     def get(self, request, format=None):
         # Получаем список всех пользователей, на которых подписан текущий
         subscriptions = User.objects.filter(followers__follower=request.user)
         # Применяем вашу кастомную пагинацию
         paginator = CustomPagination()
         result_page = paginator.paginate_queryset(subscriptions, request)
-        serializer = FollowCreateSerializer(result_page, many=True)
+        serializer = FollowCreateListSerializer(
+            result_page, many=True, context={'request': request}
+        )
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -128,9 +120,10 @@ class UserFollowView(APIView):
             follower=user,
             following=user_to_subscribe
         )
-
         # перенаправляем на сериалайзер, чтобы получить ответ как в ReDoc
-        serializer = FollowCreateSerializer(user_to_subscribe)
+        serializer = FollowCreateListSerializer(
+            user_to_subscribe, context={'request': request}
+        )
         return Response(
             serializer.data,
             status=status.HTTP_201_CREATED
@@ -157,11 +150,13 @@ class UserFollowView(APIView):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    """Вью для создания рецепта с готовыми энгридиентами."""
+    """
+    Вьюсет для создания и редактирования
+    рецепта с готовыми ингредиентами.
+    """
 
     permission_classes = [IsAuthenticatedOrReadOnly, IsRecipeAuthorOrReadOnly]
     queryset = Recipe.objects.all()
-    # serializer_class = RecipeSerializer
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('tags', 'author',)
@@ -236,105 +231,89 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-
-class AddInFavoritesView(APIView):
-    """Вью для добавления готового рецепта в избранное."""
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, pk):
-        try:
-            # Получаем рецепт
-            recipe = Recipe.objects.get(pk=pk)
-        except Recipe.DoesNotExist:
-            return Response(
-                {"message": "Рецепт не найден"},
-                status=status.HTTP_400_BAD_REQUEST
+    @action(detail=True, methods=['post', 'delete'])
+    def favorite(self, request, **kwargs):
+        user = self.request.user
+        if request.method == 'POST':
+            try:
+                # Попытка получить объект рецепта по id
+                recipe = Recipe.objects.get(id=kwargs['pk'])
+            except Recipe.DoesNotExist:
+                return Response(
+                    {'detail': 'Рецепт не существует.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if Favourite.objects.filter(
+                user=user,
+                recipe=recipe
+            ).exists():
+                return Response(
+                    {"message": "Рецепт уже добавлен в избранное"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            Favourite.objects.create(user=user, recipe=recipe)
+            serializer = FavouriteShoplistRecipeSerializer(
+                recipe,
+                context={'request': request},
             )
-        # Получаем пользователя из токена
-        user = request.user
-        # Проверяем, не добавлен ли уже рецепт в избранное
-        if Favourite.objects.filter(user=user, recipe=recipe).exists():
-            return Response(
-                {"message": "Рецепт уже добавлен в избранное"},
-                status=status.HTTP_400_BAD_REQUEST
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        if request.method == 'DELETE':
+            recipe = get_object_or_404(Recipe, id=kwargs['pk'])
+            try:
+                favourite = Favourite.objects.get(user=user, recipe=recipe)
+                favourite.delete()
+                return Response(
+                    {'detail': 'Рецепт удален из избранного.'},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            except Favourite.DoesNotExist:
+                return Response(
+                    {'detail': 'Рецепт не был ранее добавлен в избранное.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+    @action(detail=True, methods=['post', 'delete'])
+    def shopping_cart(self, request, **kwargs):
+        user = self.request.user
+        if request.method == 'POST':
+            try:
+                # Попытка получить объект рецепта по id
+                recipe = Recipe.objects.get(id=kwargs['pk'])
+            except Recipe.DoesNotExist:
+                return Response(
+                    {'detail': 'Рецепт не существует.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if Shoplist.objects.filter(
+                user=user,
+                recipe=recipe
+            ).exists():
+                return Response(
+                    {"message": "Рецепт уже добавлен в шоплист"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            Shoplist.objects.create(user=user, recipe=recipe)
+            serializer = FavouriteShoplistRecipeSerializer(
+                recipe,
+                context={'request': request},
             )
-        # Создаем запись об избранном
-        favourite = Favourite.objects.create(user=user, recipe=recipe)
-        # Создаем сериализатор для ответа
-        serializer = FavouriteRecipeSerializer(
-            favourite.recipe,
-            context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def delete(self, request, pk):
-        # Получаем пользователя из токена
-        user = request.user
-        # Получаем рецепт или выбрасываем 404, если он не существует
-        recipe = get_object_or_404(Recipe, pk=pk)
-        # Проверяем, добавлен ли рецепт в избранное пользователя
-        if not Favourite.objects.filter(user=user, recipe=recipe).exists():
-            return Response(
-                {"message": "Рецепт не был добавлен в ваш список избранного"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Удаляем запись об избранном
-        Favourite.objects.filter(user=user, recipe=recipe).delete()
-        return Response(
-            {"message": "Рецепт успешно удален из вашего списка избранного"},
-            status=status.HTTP_204_NO_CONTENT
-        )
-
-
-class AddInShoplistView(APIView):
-    """Вью для добавления готового рецепта в шоплист."""
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, pk):
-        try:
-            # Получаем рецепт
-            recipe = Recipe.objects.get(pk=pk)
-        except Recipe.DoesNotExist:
-            return Response(
-                {"message": "Рецепт не найден"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Получаем пользователя из токена
-        user = request.user
-        # Проверяем, не добавлен ли уже рецепт в шоплист
-        if Shoplist.objects.filter(user=user, recipe=recipe).exists():
-            return Response(
-                {"message": "Рецепт уже добавлен в шоплист"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Создаем запись в шоплисте
-        favourite = Shoplist.objects.create(user=user, recipe=recipe)
-        # Создаем сериализатор для ответа
-        serializer = ShoplistRecipeSerializer(
-            favourite.recipe,
-            context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def delete(self, request, pk):
-        # Получаем пользователя из токена
-        user = request.user
-        # Получаем рецепт или выбрасываем 404, если он не существует
-        recipe = get_object_or_404(Recipe, pk=pk)
-        # Проверяем, добавлен ли рецепт шоплист пользователя
-        if not Shoplist.objects.filter(user=user, recipe=recipe).exists():
-            return Response(
-                {"message": "Рецепт не был добавлен в ваш шоплист"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Удаляем запись об избранном
-        Shoplist.objects.filter(user=user, recipe=recipe).delete()
-        return Response(
-            {"message": "Рецепт успешно удален из вашего шоплиста"},
-            status=status.HTTP_204_NO_CONTENT
-        )
+        if request.method == 'DELETE':
+            recipe = get_object_or_404(Recipe, id=kwargs['pk'])
+            try:
+                shoplst = Shoplist.objects.get(user=user, recipe=recipe)
+                shoplst.delete()
+                return Response(
+                    {'detail': 'Рецепт удален из шоплиста.'},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            except Shoplist.DoesNotExist:
+                return Response(
+                    {'detail': 'Рецепт не был ранее добавлен в шоплист.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
 
 class DownloadShoppingCart(APIView):
@@ -371,26 +350,10 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
     queryset = Ingredient.objects.all()
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
-    # pagination_class = None  # отключение пагинации на уровне вьюсета
     filterset_fields = ('name',)
     search_fields = ('name',)
-
-
-class MeasurementViewSet(viewsets.ModelViewSet):
-    serializer_class = MeasurementSerializer
-    queryset = Measurement.objects.all()
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
-
-
-class FavouriteViewSet(viewsets.ModelViewSet):
-    serializer_class = FavouriteSerializer
-    queryset = Favourite.objects.all()
-
-
-class ShoplistViewSet(viewsets.ModelViewSet):
-    serializer_class = ShoplistSerializer
-    queryset = Shoplist.objects.all()
