@@ -54,7 +54,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(
         detail=False, methods=['get'],
         url_path='me',
-        permission_classes=[IsAuthenticated,]
+        permission_classes=[IsAuthenticated]
     )
     def me(self, request):
         serializer = CurrentUserSerializer(
