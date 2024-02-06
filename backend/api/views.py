@@ -55,9 +55,9 @@ class UserViewSet(DjoserUserViewSet):
     pagination_class = CustomPagination
 
     @action(
-            detail=False, methods=['get'],
-            url_path='me',
-            permission_classes=[IsAuthenticated]
+        detail=False, methods=['get'],
+        url_path='me',
+        permission_classes=[IsAuthenticated]
     )
     def me(self, request):
         serializer = CurrentUserSerializer(
@@ -66,9 +66,9 @@ class UserViewSet(DjoserUserViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
-            detail=False, methods=['get'],
-            url_path='subscriptions',
-            permission_classes=[IsAuthenticated]
+        detail=False, methods=['get'],
+        url_path='subscriptions',
+        permission_classes=[IsAuthenticated]
     )
     def subscriptions(self, request):
         # Получаем список всех пользователей, на которых подписан текущий
@@ -82,9 +82,9 @@ class UserViewSet(DjoserUserViewSet):
         return paginator.get_paginated_response(serializer.data)
 
     @action(
-            detail=True, methods=['post', 'delete'],
-            url_path='subscribe',
-            permission_classes=[IsAuthenticatedOrReadOnly]
+        detail=True, methods=['post', 'delete'],
+        url_path='subscribe',
+        permission_classes=[IsAuthenticatedOrReadOnly]
     )
     def subscribe(self, request, id):
         user_to_subscribe = get_object_or_404(User, id=id)
@@ -196,10 +196,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return queryset
 
     @action(
-            detail=True,
-            url_path='favorite',
-            methods=['post', 'delete'],
-            permission_classes=[IsAuthenticated]
+        detail=True,
+        url_path='favorite',
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, **kwargs):
         user = self.request.user
@@ -243,10 +243,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
 
     @action(
-            detail=True,
-            url_path='shopping_cart',
-            methods=['post', 'delete'],
-            permission_classes=[IsAuthenticated]
+        detail=True,
+        url_path='shopping_cart',
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, **kwargs):
         user = self.request.user
@@ -293,9 +293,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
 
     @action(
-            detail=False, methods=['get'],
-            url_path='download_shopping_cart',
-            permission_classes=[IsAuthenticated]
+        detail=False, methods=['get'],
+        url_path='download_shopping_cart',
+        permission_classes=[IsAuthenticated]
     )
     def download_shopping_cart(self, request):
         # Получаем ингредиенты для рецептов в списке покупок текущего юзера
