@@ -329,6 +329,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     filterset_class = IngredientFilter
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    pagination_class = None
     filterset_fields = ('name',)
     search_fields = ('name',)
 
@@ -336,4 +337,5 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     """Вьюсет списка тегов для эндпоина тегов."""
     serializer_class = TagSerializer
+    pagination_class = None
     queryset = Tag.objects.all()
