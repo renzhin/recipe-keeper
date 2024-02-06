@@ -1,6 +1,7 @@
 import base64
 import webcolors
 
+from djoser.serializers import UserSerializer as DjoserUserSerializer
 from django.shortcuts import get_object_or_404
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
@@ -49,7 +50,7 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(DjoserUserSerializer):
     """Сериалайзер для создания пользователя и отдающий список пользователей"""
     email = serializers.EmailField(
         max_length=254,
@@ -256,11 +257,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         if len(value) == 0:
             raise serializers.ValidationError(
                 "Попытка передать пустой список тегов."
-            )
+                )
         elif len(value) != len(uniq_tags):
             raise serializers.ValidationError(
                 "Попытка добавить два или более идентичных тега."
-            )
+                )
         # Проверяем, что переданные теги существуют в базе
         for tag in value:
             if not Tag.objects.filter(pk=tag.pk).exists():

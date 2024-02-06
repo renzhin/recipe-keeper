@@ -101,7 +101,9 @@ class Recipe(BaseModel):
         Ingredient, through='IngredientRecipe'
     )
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='recipes'
+        User, on_delete=models.CASCADE,
+        related_name='recipes',
+        verbose_name='автор',
     )
     text = models.TextField(verbose_name='описание',)
     image = models.ImageField(
@@ -146,10 +148,15 @@ class IngredientRecipe(models.Model):
 class Favourite(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE,
+        related_name='favors',
         blank=True,
         null=True,
     )
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='favors',
+    )
 
     def __str__(self):
         return f"{self.recipe} в избранном {self.user}"
