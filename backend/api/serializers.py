@@ -2,6 +2,7 @@ import base64
 import webcolors
 
 from djoser.serializers import UserSerializer as DjoserUserSerializer
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
@@ -9,13 +10,15 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
 from recipes.models import (
-    Follow,
     Tag,
     Recipe,
     Ingredient,
     IngredientRecipe,
     Favourite,
     Shoplist,
+)
+from users.models import (
+    Follow,
 )
 from recipes.validators import (
     validate_me, username_validator, validate_cooking_time
@@ -257,11 +260,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         if len(value) == 0:
             raise serializers.ValidationError(
                 "Попытка передать пустой список тегов."
-            )
+                )
         elif len(value) != len(uniq_tags):
             raise serializers.ValidationError(
                 "Попытка добавить два или более идентичных тега."
-            )
+                )
         # Проверяем, что переданные теги существуют в базе
         for tag in value:
             if not Tag.objects.filter(pk=tag.pk).exists():
@@ -271,7 +274,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         return value
 
     def validate_ingredients(self, value):
-        print(value)
         if not value:
             raise serializers.ValidationError(
                 'Нет ни одного ингредиента'
@@ -319,6 +321,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         # Добавляем все связи в базу данных
         IngredientRecipe.objects.bulk_create(ingredient_recipe_list)
 
+    @transaction.atomic
     def create(self, validated_data):
         # Извлекаем данные о тегах и ингредиентах из валидированных данных
         tags_data = validated_data.pop('tags', [])
@@ -331,6 +334,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         self.process_ingredients(recipe, ingredients_data)
         return recipe
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         # Извлекаем данные о тегах и ингредиентах из валидированных данных
         ingredients_data = validated_data.pop('ingredients', [])
@@ -359,7 +363,7 @@ class FollowRecipeInsertSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time')
+        fields = ['id', 'name', 'image', 'cooking_time']
 
 
 class FollowCreateListSerializer(serializers.ModelSerializer):
@@ -374,8 +378,14 @@ class FollowCreateListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'id', 'username', 'first_name',
-            'last_name', 'is_subscribed', 'recipes', 'recipes_count'
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count'
         ]
 
     def get_is_subscribed(self, obj):

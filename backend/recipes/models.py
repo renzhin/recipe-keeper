@@ -13,31 +13,6 @@ class BaseModel(models.Model):
         abstract = True
 
 
-class Follow(models.Model):
-    follower = models.ForeignKey(
-        User, on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        related_name='following',
-        verbose_name='подписчик',
-    )
-    following = models.ForeignKey(
-        User, on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        related_name='followers',
-        verbose_name='на кого подписан',
-    )
-
-    def __str__(self):
-        return f"{self.follower} подписан на {self.following}"
-
-    class Meta:
-        unique_together = ('follower', 'following')
-        verbose_name = 'подписка'
-        verbose_name_plural = 'Подписки'
-
-
 class Tag(BaseModel):
     name = models.CharField(
         max_length=128,

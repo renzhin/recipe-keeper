@@ -2,9 +2,7 @@ from django.contrib import admin
 from django.db.models import Count
 from django.contrib.auth.models import Group
 
-from users.models import ModifiedUser
 from .models import (
-    Follow,
     Recipe,
     Ingredient,
     Measurement,
@@ -43,6 +41,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'total_favorites',
     )
     list_filter = ('tags', 'author', 'name',)
+    search_fields = ('name',)
 
     def total_favorites(self, obj):
         return obj.favors_count
@@ -56,28 +55,55 @@ class RecipeAdmin(admin.ModelAdmin):
     total_favorites.admin_order_field = 'favors_count'
 
 
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'color', 'slug')
+    search_fields = ('name',)
+
+
+class MeasurementAdmin(admin.ModelAdmin):
+    list_display = ('type',)
+    search_fields = ('type',)
+
+
 class IngredientAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'measurement_unit'
     )
-    list_filter = ('name', 'measurement_unit',)
+    list_filter = ('measurement_unit',)
+    search_fields = ('name',)
 
 
-class ModifiedUserAdmin(admin.ModelAdmin):
+class ShoplistAdmin(admin.ModelAdmin):
     list_display = (
-        'username',
-        'first_name',
-        'last_name',
-        'email'
+        'user',
+        'recipe'
     )
-    list_filter = ('first_name', 'email',)
+    list_filter = ('user',)
+    search_fields = (
+        'user__username',
+        'user__first_name',
+        'user__last_name',
+        'recipe__name',
+    )
 
 
-admin.site.register(Follow)
+class FavouriteAdmin(admin.ModelAdmin):
+    list_display = (
+        'user',
+        'recipe'
+    )
+    list_filter = ('user',)
+    search_fields = (
+        'user__username',
+        'user__first_name',
+        'user__last_name',
+        'recipe__name',
+    )
+
+
 admin.site.register(Ingredient, IngredientAdmin)
-admin.site.register(Measurement)
-admin.site.register(Tag)
-admin.site.register(Favourite)
-admin.site.register(Shoplist)
-admin.site.register(ModifiedUser, ModifiedUserAdmin)
+admin.site.register(Measurement, MeasurementAdmin)
+admin.site.register(Tag, TagAdmin)
+admin.site.register(Favourite, FavouriteAdmin)
+admin.site.register(Shoplist, ShoplistAdmin)
