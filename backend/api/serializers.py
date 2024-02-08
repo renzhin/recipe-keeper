@@ -271,9 +271,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         # Проверяем, что переданные теги существуют в базе
         for tag in value:
             if not Tag.objects.filter(pk=tag.pk).exists():
-                raise serializers.ValidationError(
-                    "Тэг или несколько тегов отсутствуют в базе данных."
-                )
+                raise serializers.ValidationError({
+                    'tags': 'Тэг отсутствует в базе данных.'
+                })
         return value
 
     def validate_ingredients(self, value):
