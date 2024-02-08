@@ -408,7 +408,9 @@ class FollowCreateListSerializer(serializers.ModelSerializer):
     def get_recipes_and_limit(self, obj):
         request = self.context.get('request')
         limit = request.GET.get('recipes_limit')
-        recipes = obj.recipes.all()
+        recipes = Recipe.objects.filter(
+            author=obj
+        ).all()
         if limit:
             recipes = recipes[:int(limit)]
         serializer = FollowRecipeInsertSerializer(
