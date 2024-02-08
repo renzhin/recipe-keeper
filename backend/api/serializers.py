@@ -278,34 +278,35 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def validate_ingredients(self, value):
         if not value:
-            raise serializers.ValidationError(
-                'Нет ни одного ингредиента'
-            )
+            raise serializers.ValidationError({
+                'ingredients': 'Нет ни одного ингредиента'
+            })
         ingredients = [item['id'] for item in value]
         uniq_ingredients = set(ingredients)
 
         if len(uniq_ingredients) == 0:
-            raise serializers.ValidationError(
-                "Попытка передать пустой список ингредиентов."
-            )
+            raise serializers.ValidationError({
+                'ingredients': 'Попытка передать пустой список ингредиентов!'
+            })
         elif len(ingredients) != len(uniq_ingredients):
-            raise serializers.ValidationError(
-                "Попытка добавить два или более идентичных ингредиента."
-            )
+            raise serializers.ValidationError({
+                'ingredients': "Попытка добавить идентичные ингредиента."
+            })
         # Проверяем наличие ингредиентов в базе данных и их количество
         for item in value:
             ingredient = item['id']
             amount = item['amount']
             if amount < 1:
-                raise serializers.ValidationError(
-                    f"Кол-во ингредиента с id {ingredient} должно быть >= 1."
-                )
+                raise serializers.ValidationError({
+                    'amount': f"Кол-во ингредиента id {ingredient} < 1."
+                })
             if not Ingredient.objects.filter(pk=ingredient).exists():
-                raise serializers.ValidationError(
-                    f"Ингредиент с id {ingredient} отсутствует в базе данных."
-                )
+                raise serializers.ValidationError({
+                    'ingredients': f"Ингредиента с id {ingredient} нет в базе"
+                })
         return value
 
+    @transaction.atomic
     def process_ingredients(self, instance, ingredients_data):
         # Создание связей с ингредиентами
         ingredient_recipe_list = []

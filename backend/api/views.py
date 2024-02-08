@@ -219,7 +219,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 recipe=recipe
             ).exists():
                 return Response(
-                    {"message": "Рецепт уже добавлен в {name}"},
+                    {"message": f"Рецепт уже добавлен в {name}"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             favorite_shoplist.objects.create(user=user, recipe=recipe)
