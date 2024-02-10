@@ -83,6 +83,15 @@ class UserSerializer(DjoserUserSerializer):
         validated_data['password'] = make_password(validated_data['password'])
         return super(UserSerializer, self).create(validated_data)
 
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        return (
+            request.user.is_authenticated and Follow.objects.filter(
+                follower=request.user,
+                following=obj
+            ).exists()
+        )
+
 
 class CurrentUserSerializer(serializers.ModelSerializer):
     """Сериалайзер для информации о конкеретном пользователе"""
