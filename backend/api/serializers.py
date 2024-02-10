@@ -51,6 +51,7 @@ class Base64ImageField(serializers.ImageField):
 
 class UserSerializer(DjoserUserSerializer):
     """Сериалайзер для создания пользователя и отдающий список пользователей"""
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
