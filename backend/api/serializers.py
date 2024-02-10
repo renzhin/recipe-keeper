@@ -150,7 +150,7 @@ class IngredientInsertSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(write_only=True)
     amount = serializers.IntegerField(
         validators=[MinValueValidator(1)]
-        )
+    )
 
     class Meta:
         model = IngredientRecipe
