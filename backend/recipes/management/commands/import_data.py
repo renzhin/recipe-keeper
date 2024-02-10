@@ -11,7 +11,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         data_path = settings.BASE_DIR
 
-        self.stdout.write(self.style.SUCCESS('Импортирование данных v.3...'))
+        self.stdout.write(self.style.SUCCESS('Импортирование данных v.4...'))
 
         with open(
             f'{data_path}/ingredients.json', 'r', encoding='utf-8'
@@ -20,7 +20,7 @@ class Command(BaseCommand):
             for item in data:
                 # Получаем или создаем экземпляр модели Measurement
                 measurement_inst, created = Measurement.objects.get_or_create(
-                    type=item['measurement_unit']
+                    t_name=item['measurement_unit']
                 )
                 item['measurement_unit'] = measurement_inst
                 # Создаем экземпляр модели Ingredient и сохраняем его
