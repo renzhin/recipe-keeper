@@ -7,18 +7,12 @@ from .models import (
     Ingredient,
     Measurement,
     Tag,
-    TagRecipe,
     IngredientRecipe,
     Favourite,
     Shoplist
 )
 
-admin.site.unregister(Group)  # убираем раздел с группами и пользователями
-
-
-class TagRecipeInline(admin.TabularInline):
-    model = TagRecipe
-    extra = 1
+admin.site.unregister(Group)
 
 
 class IngredientRecipeInline(admin.TabularInline):
@@ -26,15 +20,9 @@ class IngredientRecipeInline(admin.TabularInline):
     extra = 1
 
 
-class FavouriteInline(admin.TabularInline):
-    model = Favourite
-    extra = 0
-    readonly_fields = ['user']
-
-
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    inlines = [TagRecipeInline, IngredientRecipeInline, FavouriteInline]
+    inlines = [IngredientRecipeInline]
     list_display = (
         'name',
         'author',
@@ -44,27 +32,32 @@ class RecipeAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
     def total_favorites(self, obj):
-        return obj.favors_count
+        return obj.favourite_recipes_count
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        queryset = queryset.annotate(favors_count=Count('favors'))
+        queryset = queryset.annotate(
+            favourite_recipes_count=Count('favourite_recipes')
+        )
         return queryset
 
     total_favorites.short_description = 'В избранном'
-    total_favorites.admin_order_field = 'favors_count'
+    total_favorites.admin_order_field = 'favourite_recipes_count'
 
 
+@admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ('name', 'color', 'slug')
     search_fields = ('name',)
 
 
+@admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
-    list_display = ('type',)
-    search_fields = ('type',)
+    list_display = ('t_name',)
+    search_fields = ('t_name',)
 
 
+@admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -74,6 +67,7 @@ class IngredientAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+@admin.register(Shoplist)
 class ShoplistAdmin(admin.ModelAdmin):
     list_display = (
         'user',
@@ -88,6 +82,7 @@ class ShoplistAdmin(admin.ModelAdmin):
     )
 
 
+@admin.register(Favourite)
 class FavouriteAdmin(admin.ModelAdmin):
     list_display = (
         'user',
@@ -100,10 +95,3 @@ class FavouriteAdmin(admin.ModelAdmin):
         'user__last_name',
         'recipe__name',
     )
-
-
-admin.site.register(Ingredient, IngredientAdmin)
-admin.site.register(Measurement, MeasurementAdmin)
-admin.site.register(Tag, TagAdmin)
-admin.site.register(Favourite, FavouriteAdmin)
-admin.site.register(Shoplist, ShoplistAdmin)

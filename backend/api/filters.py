@@ -40,19 +40,19 @@ class RecipeFilter(FilterSet):
         )
 
     def get_is_favorited(self, queryset, name, value):
-        # Фильтруем рецепты, добавленные в избранное пользователем
+        """Фильтруем рецепты, добавленные в избранное пользователем"""
         user = self.request.user
         if user.is_authenticated and value:
             return queryset.filter(
-                favors__user=user
+                favourite_recipes__user=user
             )
         return queryset
 
     def get_is_in_shopping_cart(self, queryset, name, value):
-        # Фильтруем рецепты, добавленные в шоплист пользователем
+        """Фильтруем рецепты, добавленные в шоплист пользователем"""
         user = self.request.user
         if user.is_authenticated and value:
             return queryset.filter(
-                shops__user=user
+                shoplist_recipes__user=user
             )
         return queryset

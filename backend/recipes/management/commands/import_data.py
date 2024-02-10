@@ -1,7 +1,6 @@
 import json
 
 from django.core.management.base import BaseCommand
-from foodgram_backend import settings
 from recipes.models import Measurement, Ingredient
 
 
@@ -9,13 +8,11 @@ class Command(BaseCommand):
     help = 'Импортирование даты JSON в модель Джанго'
 
     def handle(self, *args, **options):
-        data_path = settings.BASE_DIR
+        json_file_path = '../data/ingredients.json'
 
-        self.stdout.write(self.style.SUCCESS('Импортирование данных v.3...'))
+        self.stdout.write(self.style.SUCCESS('Импортирование данных...'))
 
-        with open(
-            f'{data_path}/ingredients.json', 'r', encoding='utf-8'
-        ) as file:
+        with open(json_file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
             for item in data:
                 # Получаем или создаем экземпляр модели Measurement

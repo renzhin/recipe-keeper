@@ -1,8 +1,10 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 
 from .models import ModifiedUser, Follow
 
 
+@admin.register(Follow)
 class FollowAdmin(admin.ModelAdmin):
     list_display = (
         'follower',
@@ -17,12 +19,15 @@ class FollowAdmin(admin.ModelAdmin):
     )
 
 
-class ModifiedUserAdmin(admin.ModelAdmin):
+@admin.register(ModifiedUser)
+class ModifiedUserAdmin(UserAdmin):
     list_display = (
         'username',
         'first_name',
         'last_name',
-        'email'
+        'email',
+        'get_followers_count',
+        'get_recipe_count'
     )
     list_filter = ('first_name', 'email',)
     search_fields = (
@@ -31,6 +36,10 @@ class ModifiedUserAdmin(admin.ModelAdmin):
         'email',
     )
 
+    def get_followers_count(self, obj):
+        return obj.followers.count()
+    get_followers_count.short_description = 'Подписчики'
 
-admin.site.register(Follow, FollowAdmin)
-admin.site.register(ModifiedUser, ModifiedUserAdmin)
+    def get_recipe_count(self, obj):
+        return obj.recipes.count()
+    get_recipe_count.short_description = 'Количество рецептов'
