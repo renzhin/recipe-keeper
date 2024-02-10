@@ -53,7 +53,7 @@ class Measurement(BaseModel):
     """
     Считаю данную модель необходимой
     для возможности массового переименования
-    единиц измерений. Например г. в гр.
+    единиц измерений. Например г. в грм.
     """
     t_name = models.CharField(
         max_length=NAME_SHORT_NUMBCHAR,
