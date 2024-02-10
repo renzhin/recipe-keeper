@@ -61,6 +61,7 @@ class UserSerializer(DjoserUserSerializer):
             'first_name',
             'last_name',
             'password',
+            'is_subscribed'
         ]
         extra_kwargs = {'password': {'write_only': True}}
 
