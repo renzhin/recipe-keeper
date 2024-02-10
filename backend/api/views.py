@@ -56,6 +56,18 @@ class UserViewSet(DjoserUserViewSet):
     permission_classes = [AllowAny]
 
     @action(
+        detail=True,
+        methods=['get'],
+        url_path='user',
+        permission_classes=[IsAuthenticated]
+    )
+    def user(self, request):
+        serializer = CurrentUserSerializer(
+            request.user, context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
         detail=False,
         methods=['get'],
         url_path='me',

@@ -5,13 +5,65 @@
 ##  Автор дипломной работы
 [@renzhin](https://github.com/renzhin)
 
+**Тестовый пользователь для админки:**
+Катерина Север
+email: kate@gmail.com
+password: 789dfg@1
+username: katerin
+
 ## Используемые технологии
-•	Python 3.9.10
-•	Django 3.2.16
+React Python Django DRF PostgreSQL
 
 ## Проект развернут по адресу:
 https://foodgram-renzh.ddns.net/
 
+
+## Инструкция по запуску проекта на удаленном сервере с помощью Docker:
+
+Клонируем репозиторий:
+````
+git@github.com:renzhin/foodgram-project-react.git
+````
+
+На виртуальном сервере создаем директорию проекта с именем foodgram/
+
+Копируем в папку foodgram/ файл с переменными окружения .env и файл оркестрации контейнеров docker-compose.production.yml
+
+Запускайем docker-compose.production.yml в режиме демона командой:
+````
+sudo docker compose -f docker-compose.production.yml up -d 
+````
+
+Собираем статику в контейнере backend:
+````
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
+````
+
+Выполняем миграции:
+````
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
+````
+
+Создаем суперпользователя:
+````
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py createsuperuser
+````
+
+Загружаем фикстуры ингредиентов:
+````
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py import_data
+````
+
+Пример заполнения файла с переменными окружения.env:
+````
+POSTGRES_USER=django_user
+POSTGRES_PASSWORD=mysecretpassword
+POSTGRES_DB=django
+DB_HOST=db
+DB_PORT=5432
+SECRET_KEY=django-insecure-1234567891011121223321231232323232321323
+ALLOWED_HOSTS= список....
+````
 
 ## В API проекта доступны следующие эндпоинты:
 

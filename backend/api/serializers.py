@@ -73,7 +73,6 @@ class UserSerializer(DjoserUserSerializer):
         required=True,
         write_only=True,
     )
-    is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
@@ -84,7 +83,6 @@ class UserSerializer(DjoserUserSerializer):
             'first_name',
             'last_name',
             'password',
-            'is_subscribed'
         ]
 
     def validate_email(self, value):
@@ -105,15 +103,6 @@ class UserSerializer(DjoserUserSerializer):
         # Хеширование пароля и создание пользователя
         validated_data['password'] = make_password(validated_data['password'])
         return super(UserSerializer, self).create(validated_data)
-
-    def get_is_subscribed(self, obj):
-        request = self.context.get('request')
-        return (
-            request.user.is_authenticated and Follow.objects.filter(
-                follower=request.user,
-                following=obj
-            ).exists()
-        )
 
 
 class CurrentUserSerializer(serializers.ModelSerializer):
