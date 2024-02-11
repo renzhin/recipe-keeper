@@ -7,7 +7,8 @@ from foodgram_backend.constants import (
     NAME_LONG_NUMBCHAR,
     NAME_MID_NUMBCHAR,
     NAME_SHORT_NUMBCHAR,
-    COLOR_NUMBCHAR
+    COLOR_NUMBCHAR,
+    SLUG_NUMBCHAR
 )
 
 User = get_user_model()
@@ -36,7 +37,7 @@ class Tag(BaseModel):
         verbose_name='цвет',
     )
     slug = models.SlugField(
-        max_length=50,
+        max_length=SLUG_NUMBCHAR,
         unique=True,
         verbose_name='слаг',
     )
@@ -195,13 +196,13 @@ class FavouriteShoplist(models.Model):
 
 class Favourite(FavouriteShoplist):
 
-    class Meta:
+    class Meta(FavouriteShoplist.Meta):
         verbose_name = 'изранное'
         verbose_name_plural = 'Избранное'
 
 
 class Shoplist(FavouriteShoplist):
 
-    class Meta:
+    class Meta(FavouriteShoplist.Meta):
         verbose_name = 'список покупок'
         verbose_name_plural = 'Список покупок'

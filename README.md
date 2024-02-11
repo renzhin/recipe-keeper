@@ -12,7 +12,11 @@ password: 789dfg@1
 username: katerin
 
 ## Используемые технологии
-React Python Django DRF PostgreSQL
+•   React<br>
+•   Python<br>
+•   Django<br>
+•   DRF<br>
+•   PostgreSQL<br>
 
 ## Проект развернут по адресу:
 https://foodgram-renzh.ddns.net/
@@ -62,7 +66,7 @@ POSTGRES_DB=django
 DB_HOST=db
 DB_PORT=5432
 SECRET_KEY=django-insecure-1234567891011121223321231232323232321323
-ALLOWED_HOSTS= список....
+ALLOWED_HOSTS='11.22.33.44 127.0.0.1 localhost domain.name'
 ````
 
 ## В API проекта доступны следующие эндпоинты:
