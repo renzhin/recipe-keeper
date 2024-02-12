@@ -186,7 +186,7 @@ class FavouriteShoplist(models.Model):
                     'user',
                     'recipe'
                 ),
-                name='uniq_favouriteshoplist'
+                name='uniq_%(class)s'
             ),
         )
 
