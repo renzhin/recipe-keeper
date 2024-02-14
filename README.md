@@ -55,7 +55,12 @@ sudo docker compose -f docker-compose.production.yml exec backend python manage.
 
 Загружаем фикстуры ингредиентов:
 ````
-sudo docker compose -f docker-compose.production.yml exec backend python manage.py import_data
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py import_ingredients
+````
+
+Загружаем фикстуры тэгов:
+````
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py import_tags
 ````
 
 Пример заполнения файла с переменными окружения.env:

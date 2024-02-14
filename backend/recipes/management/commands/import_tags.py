@@ -2,7 +2,7 @@ import json
 
 from django.core.management.base import BaseCommand
 from foodgram_backend import settings
-from recipes.models import Measurement, Ingredient
+from recipes.models import Tag
 
 
 class Command(BaseCommand):
@@ -12,23 +12,28 @@ class Command(BaseCommand):
         data_path = settings.BASE_DIR
 
         self.stdout.write(
-            self.style.SUCCESS('Импортирование данных. Тэги. v.0.1')
+            self.style.SUCCESS('Импортирование данных. Тэги. v.1')
         )
 
         with open(
-            f'{data_path}/ingredients.json', 'r', encoding='utf-8'
+            f'{data_path}/data/tags.json', 'r', encoding='utf-8'
         ) as file:
-            data = json.load(file)
-            for item in data:
-                # Получаем или создаем экземпляр модели Measurement
-                measurement_inst, created = Measurement.objects.get_or_create(
-                    t_name=item['measurement_unit']
-                )
-                item['measurement_unit'] = measurement_inst
-                # Создаем экземпляр модели Ingredient и сохраняем его
-                ingredient_instance = Ingredient(**item)
-                ingredient_instance.save()
+            tags_data = json.load(file)
+            for item in tags_data:
+                # Проверяем, существует ли ингредиент с таким именем в базе
+                existing_tags = Tag.objects.filter(
+                    slug=item['slug']
+                ).first()
+                if existing_tags:
+                    self.stdout.write(self.style.WARNING(
+                        f'Тэг "{item["slug"]}" уже в базе. Пропускаем.'
+                    ))
+                    continue
+
+                # Создаем экземпляр модели Tag и сохраняем его
+                tag_instance = Tag(**item)
+                tag_instance.save()
 
         self.stdout.write(
-            self.style.SUCCESS('Импортирование данных завершено.')
+            self.style.SUCCESS('Импортирование тэгов завершено.')
         )
