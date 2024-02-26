@@ -1,15 +1,9 @@
-# Продуктовый помощник Foodgram. Дипломная работа
+# Агрегатор рецептов Recipe Keeper
 
-## Веб приложение, на котором пользователи смогут найти для себя подходящие рецепты приготовления еды, добаавить эти рецепты в избранное, а также подписаться на авторов наиболее полюбившихся им рецептов. Также проект дает возможность формировать список продуктов, необходимых для приготовления любимых блюд.
+## Веб приложение, с помощью которого пользователи смогут найти для себя подходящие рецепты приготовления еды, добаавить эти рецепты в избранное, а также подписаться на авторов наиболее полюбившихся им рецептов. Также проект дает возможность формировать список продуктов, необходимых для приготовления любимых блюд.
 
-##  Автор дипломной работы
+##  Автор
 [@renzhin](https://github.com/renzhin)
-
-**Тестовый пользователь для админки:**
-Катерина Север
-email: kate@gmail.com
-password: 789dfg@1
-username: katerin
 
 ## Используемые технологии
 •   React<br>
@@ -19,19 +13,19 @@ username: katerin
 •   PostgreSQL<br>
 
 ## Проект развернут по адресу:
-https://foodgram-renzh.ddns.net/
+https://recipe-keeper.renzhin.ru/
 
 
 ## Инструкция по запуску проекта на удаленном сервере с помощью Docker:
 
 Клонируем репозиторий:
 ````
-git@github.com:renzhin/foodgram-project-react.git
+git@github.com:renzhin/recipe-keeper.git
 ````
 
-На виртуальном сервере создаем директорию проекта с именем foodgram/
+На виртуальном сервере создаем директорию проекта с именем recipe-keeper/
 
-Копируем в папку foodgram/ файл с переменными окружения .env и файл оркестрации контейнеров docker-compose.production.yml
+Копируем в папку recipe-keeper/ файл с переменными окружения .env и файл оркестрации контейнеров docker-compose.production.yml
 
 Запускайем docker-compose.production.yml в режиме демона командой:
 ````
@@ -55,7 +49,12 @@ sudo docker compose -f docker-compose.production.yml exec backend python manage.
 
 Загружаем фикстуры ингредиентов:
 ````
-sudo docker compose -f docker-compose.production.yml exec backend python manage.py import_data
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py import_ingredients
+````
+
+Загружаем фикстуры тегов:
+````
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py import_tags
 ````
 
 Пример заполнения файла с переменными окружения.env:

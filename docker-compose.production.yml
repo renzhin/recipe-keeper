@@ -12,20 +12,20 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
   backend:
-    image: renzhin/foodgram_backend
+    image: renzhin/recipe-keeper_backend
     env_file: .env
     volumes:
       - static:/backend_static
       - media:/app/media
   frontend:
     env_file: .env
-    image: renzhin/foodgram_frontend
+    image: renzhin/recipe-keeper_frontend
     command: cp -r /app/build/. /static/
     volumes:
       - static:/static
       - media:/media
   gateway:
-    image: renzhin/foodgram_gateway
+    image: renzhin/recipe-keeper_gateway
     env_file: .env
     ports:
       - ${WEB_PORT}:80

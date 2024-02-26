@@ -1,5 +1,5 @@
 # .github/workflows/main.yml
-name: Main Foodgram workflow
+name: Main Recipe Keeper workflow
 
 on:
   push:
@@ -85,7 +85,7 @@ jobs:
           # Для каждого пересобранного образа
           # устанавливаем тег latest, чтобы потом
           # на сервере и в docker-compose.yml не указывать версию
-          tags: renzhin/foodgram_backend:latest
+          tags: renzhin/recipe-keeper_backend:latest
   build_frontend_and_push_to_docker_hub:
     name: FRONTEND Push Docker image to DockerHub
     runs-on: ubuntu-latest
@@ -104,7 +104,7 @@ jobs:
         with:
           context: ./frontend/
           push: true
-          tags: renzhin/foodgram_frontend:latest
+          tags: renzhin/recipe-keeper_frontend:latest
   build_gateway_and_push_to_docker_hub:
     name: GATEWAY Push Docker image to DockerHub
     runs-on: ubuntu-latest
@@ -124,11 +124,11 @@ jobs:
           context: ./nginx/
           push: true
           # Тут вместо username должен быть ваш логин на Docker Hub
-          tags: renzhin/foodgram_gateway:latest
+          tags: renzhin/recipe-keeper_gateway:latest
   deploy:
     runs-on: ubuntu-latest
     needs:
-      # Дождёмся билда всех образов Taski
+      # Дождёмся билда всех образов
       - build_backend_and_push_to_docker_hub
       - build_frontend_and_push_to_docker_hub
       - build_gateway_and_push_to_docker_hub
@@ -145,7 +145,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         source: "docker-compose.production.yml"
-        target: "foodgram"
+        target: "recipe-keeper"
     - name: Executing remote ssh commands to deploy
       uses: appleboy/ssh-action@master
       with:
@@ -157,7 +157,7 @@ jobs:
         # которые нужно выполнить на сервере,
         # с которым установлено соединение
         script: |
-          cd foodgram
+          cd recipe-keeper
           # Выполняет pull образов с Docker Hub
           sudo docker compose -f docker-compose.production.yml pull
           # Перезапускает все контейнеры в Docker Compose
@@ -176,4 +176,4 @@ jobs:
       with:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
-        message: Аллилуйя! Деплой Foodgram успешно выполнен!
+        message: Аллилуйя! Деплой Recipe Keeper успешно выполнен!
