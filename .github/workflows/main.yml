@@ -141,6 +141,7 @@ jobs:
     # Передаём параметры для action appleboy/scp-action:
       with:
         host: ${{ secrets.HOST }}
+        port: ${{ secrets.PORT }}
         username: ${{ secrets.USER }}
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
