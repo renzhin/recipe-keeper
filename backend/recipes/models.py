@@ -33,7 +33,7 @@ class Tag(BaseModel):
     color = ColorField(
         default='#DDDDDD',
         max_length=COLOR_NUMBCHAR,
-        format='hexa',
+        format='hex',
         verbose_name='цвет',
     )
     slug = models.SlugField(
