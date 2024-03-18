@@ -77,7 +77,6 @@ WSGI_APPLICATION = 'foodgram_backend.wsgi.application'
 
 
 if not DEBUG:
-    print('Подключили базу PostgrSQL')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -89,7 +88,6 @@ if not DEBUG:
         }
     }
 else:
-    print('Подключили базу Sqlite3')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
