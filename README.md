@@ -37,6 +37,11 @@ sudo docker compose -f docker-compose.production.yml up -d
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
 ````
 
+Копируем собранную статику:
+````
+sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /backend_static/static/
+````
+
 Выполняем миграции:
 ````
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
@@ -52,20 +57,30 @@ sudo docker compose -f docker-compose.production.yml exec backend python manage.
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py import_ingredients
 ````
 
-Загружаем фикстуры тегов:
+Загружаем фикстуры тэгов:
 ````
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py import_tags
 ````
 
 Пример заполнения файла с переменными окружения.env:
 ````
-POSTGRES_USER=django_user
-POSTGRES_PASSWORD=mysecretpassword
+# Файл .env
 POSTGRES_DB=django
+POSTGRES_USER=recipekeeper_user
+POSTGRES_PASSWORD=mysecretpassword
+DB_NAME=recipekeeper_db
+# Добавляем переменные для Django-проекта:
 DB_HOST=db
 DB_PORT=5432
+# Добавляем ключ в settyngs.py
 SECRET_KEY=django-insecure-1234567891011121223321231232323232321323
-ALLOWED_HOSTS='11.22.33.44 127.0.0.1 localhost domain.name'
+# Режим отладки
+DEBUG_MODE=False
+# Адреса хостов
+ALLOW_HOSTS='188.32.4.36 127.0.0.1 localhost recipe-keeper.renzhin.ru'
+# Проброс порта Nginx
+WEB_PORT=9876
+
 ````
 
 ## В API проекта доступны следующие эндпоинты:

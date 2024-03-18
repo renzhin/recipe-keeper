@@ -160,6 +160,10 @@ jobs:
         # с которым установлено соединение
         script: |
           cd recipe-keeper
+          # Чистим локальные образы на удаленном сервере (опционально)
+          sudo docker image rm renzhin/recipe-keeper_backend
+          sudo docker image rm renzhin/recipe-keeper_frontend
+          sudo docker image rm renzhin/recipe-keeper_gateway
           # Выполняет pull образов с Docker Hub
           sudo docker compose -f docker-compose.production.yml pull
           # Перезапускает все контейнеры в Docker Compose

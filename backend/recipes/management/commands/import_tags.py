@@ -12,7 +12,7 @@ class Command(BaseCommand):
         data_path = settings.BASE_DIR
 
         self.stdout.write(
-            self.style.SUCCESS('Импортирование данных. Тэги. v.1')
+            self.style.SUCCESS('Импортирование данных. Тэги. v.1...')
         )
 
         with open(
